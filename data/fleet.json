@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-01T00:00:00.000Z",
+  "instances": [
+    {
+      "id": "linux-main-webchat",
+      "title": "Linux Main WebChat",
+      "persona": "A pragmatic personal assistant with a dense home/work session history.",
+      "goal": "Keep one busy personal-assistant session alive across updates while exercising WebChat, memory, cron, browser, MCP, uploads, and long transcript compaction.",
+      "os": {
+        "family": "linux",
+        "label": "Ubuntu 24.04",
+        "arch": "x64"
+      },
+      "host": {
+        "manager": "ocm",
+        "publicLabel": "linux-a"
+      },
+      "release": {
+        "channel": "beta",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["webchat", "qa-channel"],
+      "features": ["memory", "cron", "browser", "mcp", "media", "subagents", "updates"],
+      "statusPath": "data/status/linux-main-webchat.json",
+      "transcriptPath": "data/transcripts/linux-main-webchat.json"
+    },
+    {
+      "id": "linux-matrix-e2ee",
+      "title": "Linux Matrix E2EE",
+      "persona": "A careful shared-room coordinator that prefers threads and reactions.",
+      "goal": "Exercise Matrix encrypted rooms, restart recovery, thread routing, reactions, media, and homeserver interruption handling.",
+      "os": {
+        "family": "linux",
+        "label": "Ubuntu 24.04",
+        "arch": "x64"
+      },
+      "host": {
+        "manager": "ssh",
+        "publicLabel": "linux-b"
+      },
+      "release": {
+        "channel": "stable",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["matrix"],
+      "features": ["e2ee", "threads", "reactions", "media", "restart-resume"],
+      "statusPath": "data/status/linux-matrix-e2ee.json",
+      "transcriptPath": "data/transcripts/linux-matrix-e2ee.json"
+    },
+    {
+      "id": "linux-slack-workspace",
+      "title": "Linux Slack Workspace",
+      "persona": "A quiet operations helper that watches room chatter and speaks only when useful.",
+      "goal": "Exercise Slack shared channels, ambient room events, message-tool visible replies, thread follow-ups, files, and restart dedupe.",
+      "os": {
+        "family": "linux",
+        "label": "Debian 12",
+        "arch": "x64"
+      },
+      "host": {
+        "manager": "ocm",
+        "publicLabel": "linux-c"
+      },
+      "release": {
+        "channel": "beta",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["slack"],
+      "features": ["ambient-room-events", "message-tool", "threads", "files", "updates"],
+      "statusPath": "data/status/linux-slack-workspace.json",
+      "transcriptPath": "data/transcripts/linux-slack-workspace.json"
+    },
+    {
+      "id": "linux-whatsapp-personal",
+      "title": "Linux WhatsApp Personal",
+      "persona": "A media-heavy personal chat assistant with frequent short follow-ups.",
+      "goal": "Exercise WhatsApp DM/group state, QR/session durability, reactions, image-heavy history, and update survival.",
+      "os": {
+        "family": "linux",
+        "label": "Ubuntu 24.04",
+        "arch": "arm64"
+      },
+      "host": {
+        "manager": "ssh",
+        "publicLabel": "linux-arm"
+      },
+      "release": {
+        "channel": "stable",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["whatsapp"],
+      "features": ["groups", "media", "reactions", "qr-session", "long-history"],
+      "statusPath": "data/status/linux-whatsapp-personal.json",
+      "transcriptPath": "data/transcripts/linux-whatsapp-personal.json"
+    },
+    {
+      "id": "mac-imessage-desktop",
+      "title": "macOS iMessage Desktop",
+      "persona": "A concise desktop assistant with native message attachments and reactions.",
+      "goal": "Exercise iMessage, native desktop service behavior, attachments, tapbacks, update restarts, and macOS app integration.",
+      "os": {
+        "family": "macos",
+        "label": "macOS 15",
+        "arch": "arm64"
+      },
+      "host": {
+        "manager": "ocm",
+        "publicLabel": "mac-a"
+      },
+      "release": {
+        "channel": "beta",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["imessage"],
+      "features": ["desktop-app", "attachments", "reactions", "native-service", "updates"],
+      "statusPath": "data/status/mac-imessage-desktop.json",
+      "transcriptPath": "data/transcripts/mac-imessage-desktop.json"
+    },
+    {
+      "id": "mac-discord-voice",
+      "title": "macOS Discord Voice",
+      "persona": "A voice-capable community helper that alternates text and spoken turns.",
+      "goal": "Exercise Discord text, voice join/leave, realtime Talk, TTS/STT, typing/progress, and media replies.",
+      "os": {
+        "family": "macos",
+        "label": "macOS 15",
+        "arch": "arm64"
+      },
+      "host": {
+        "manager": "ssh",
+        "publicLabel": "mac-b"
+      },
+      "release": {
+        "channel": "stable",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["discord", "discord-voice"],
+      "features": ["voice", "tts", "stt", "threads", "approvals", "media"],
+      "statusPath": "data/status/mac-discord-voice.json",
+      "transcriptPath": "data/transcripts/mac-discord-voice.json"
+    },
+    {
+      "id": "windows-telegram-workflow",
+      "title": "Windows Telegram Workflow",
+      "persona": "A task-oriented Telegram assistant that asks for approvals before risky work.",
+      "goal": "Exercise Telegram groups, commands, approvals, image/file messages, Windows service lifecycle, and update recovery.",
+      "os": {
+        "family": "windows",
+        "label": "Windows 11",
+        "arch": "x64"
+      },
+      "host": {
+        "manager": "ocm",
+        "publicLabel": "windows-a"
+      },
+      "release": {
+        "channel": "beta",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["telegram"],
+      "features": ["approvals", "commands", "media", "windows-service", "updates"],
+      "statusPath": "data/status/windows-telegram-workflow.json",
+      "transcriptPath": "data/transcripts/windows-telegram-workflow.json"
+    },
+    {
+      "id": "windows-coding-acp",
+      "title": "Windows ACP Coding",
+      "persona": "A coding-focused assistant that delegates to external ACP harnesses.",
+      "goal": "Exercise ACP/Codex-style sessions, subagents, browser, workspace reads, large diffs, and Windows/WSL2 path behavior.",
+      "os": {
+        "family": "windows",
+        "label": "Windows 11 + WSL2",
+        "arch": "x64"
+      },
+      "host": {
+        "manager": "ssh",
+        "publicLabel": "windows-b"
+      },
+      "release": {
+        "channel": "stable",
+        "version": "pending",
+        "autoUpdate": true
+      },
+      "channels": ["webchat", "acp"],
+      "features": ["acp", "codex", "subagents", "browser", "workspace", "large-context"],
+      "statusPath": "data/status/windows-coding-acp.json",
+      "transcriptPath": "data/transcripts/windows-coding-acp.json"
+    }
+  ]
+}

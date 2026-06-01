@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "instanceId": "linux-whatsapp-personal",
+  "redacted": true,
+  "excerpt": [
+    {
+      "role": "user",
+      "text": "What changed in the image I sent earlier?"
+    },
+    {
+      "role": "assistant",
+      "text": "The image was accepted, but the collector marked this scenario watch because the media-heavy history is near the compaction threshold."
+    }
+  ]
+}

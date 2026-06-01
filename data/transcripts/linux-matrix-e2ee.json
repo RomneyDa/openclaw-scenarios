@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "instanceId": "linux-matrix-e2ee",
+  "redacted": true,
+  "excerpt": [
+    {
+      "role": "user",
+      "text": "@assistant please continue this in the thread and react when done."
+    },
+    {
+      "role": "assistant",
+      "text": "Thread reply delivered and completion reaction observed."
+    }
+  ]
+}

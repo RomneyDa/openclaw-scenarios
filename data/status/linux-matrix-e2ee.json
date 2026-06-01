@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "instanceId": "linux-matrix-e2ee",
+  "observedAt": "2026-06-01T00:00:00.000Z",
+  "state": "pass",
+  "version": "fixture",
+  "uptimeSeconds": 43200,
+  "health": {
+    "gateway": "ready",
+    "channels": "ready",
+    "updates": "idle",
+    "diagnostics": "clean"
+  },
+  "metrics": {
+    "sessions": 6,
+    "messages": 344,
+    "mediaMessages": 41,
+    "activeRuns": 0,
+    "memoryMb": 611,
+    "contextTokens": 72000
+  },
+  "checks": [
+    { "name": "encrypted room canary", "status": "pass" },
+    { "name": "thread follow-up", "status": "pass" },
+    { "name": "restart replay dedupe", "status": "pass" }
+  ],
+  "artifacts": []
+}

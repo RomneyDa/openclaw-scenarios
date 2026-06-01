@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "instanceId": "linux-slack-workspace",
+  "redacted": true,
+  "excerpt": [
+    {
+      "role": "system",
+      "text": "Ambient room event observed. Final text stayed private until message tool was used."
+    },
+    {
+      "role": "assistant",
+      "text": "Posted a short visible reply in the active thread with the requested file summary."
+    }
+  ]
+}

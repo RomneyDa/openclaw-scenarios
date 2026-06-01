@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "instanceId": "linux-main-webchat",
+  "redacted": true,
+  "excerpt": [
+    {
+      "role": "user",
+      "text": "Summarize the current home/work reminders and include the image notes from yesterday."
+    },
+    {
+      "role": "assistant",
+      "text": "I found the reminder set, checked recent media notes, and queued a follow-up. One older image note was truncated in history, so I used the compacted summary."
+    }
+  ]
+}

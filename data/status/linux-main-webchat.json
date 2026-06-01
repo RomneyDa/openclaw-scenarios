@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "instanceId": "linux-main-webchat",
+  "observedAt": "2026-06-01T00:00:00.000Z",
+  "state": "watch",
+  "version": "fixture",
+  "uptimeSeconds": 86400,
+  "health": {
+    "gateway": "ready",
+    "channels": "partial",
+    "updates": "idle",
+    "diagnostics": "watch"
+  },
+  "metrics": {
+    "sessions": 14,
+    "messages": 812,
+    "mediaMessages": 287,
+    "activeRuns": 0,
+    "memoryMb": 742,
+    "contextTokens": 118000
+  },
+  "checks": [
+    { "name": "gateway ready", "status": "pass" },
+    { "name": "long history render", "status": "pass" },
+    { "name": "media-heavy compaction", "status": "watch" },
+    { "name": "cron reminder", "status": "pass" }
+  ],
+  "artifacts": [
+    { "label": "latest summary", "href": "#" }
+  ]
+}
