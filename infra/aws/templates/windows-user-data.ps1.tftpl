@@ -1,0 +1,73 @@
+<powershell>
+$ErrorActionPreference = "Stop"
+
+$InstanceId = "${instance_id}"
+$ScenarioRoot = "C:\openclaw-scenarios"
+$StateDir = "C:\openclaw-scenario"
+$LogDir = "C:\openclaw-scenario\logs"
+$OpenClawPackage = "${openclaw_package}"
+$AwsRegion = "${aws_region}"
+
+New-Item -ItemType Directory -Force -Path $ScenarioRoot, $StateDir, $LogDir | Out-Null
+
+if (-not (Get-Command choco.exe -ErrorAction SilentlyContinue)) {
+  Set-ExecutionPolicy Bypass -Scope Process -Force
+  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+  Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+}
+
+choco install -y nodejs-lts git awscli jq
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+if (-not (Get-Command openclaw.cmd -ErrorAction SilentlyContinue)) {
+  npm install -g $OpenClawPackage
+}
+
+if ("${tailscale_auth_key_ssm_parameter}" -ne "") {
+  choco install -y tailscale
+  $authKey = aws ssm get-parameter --region $AwsRegion --name "${tailscale_auth_key_ssm_parameter}" --with-decryption --query "Parameter.Value" --output text
+  & "C:\Program Files\Tailscale\tailscale.exe" up --auth-key $authKey --hostname "oc-scenario-$InstanceId" --ssh=false
+}
+
+if (-not (Test-Path "$ScenarioRoot\.git")) {
+  git clone "${repo_url}" $ScenarioRoot
+} else {
+  git -C $ScenarioRoot pull --ff-only
+}
+
+$envFile = "$StateDir\env.ps1"
+"`$env:OPENCLAW_SCENARIO_ID = '$InstanceId'" | Set-Content $envFile
+"`$env:OPENCLAW_HOME = '$StateDir\home'" | Add-Content $envFile
+"`$env:OPENCLAW_STATE_DIR = '$StateDir\home'" | Add-Content $envFile
+"`$env:OPENCLAW_GATEWAY_PORT = '18789'" | Add-Content $envFile
+
+if ("${openai_api_key_ssm_parameter}" -ne "") {
+  $openaiKey = aws ssm get-parameter --region $AwsRegion --name "${openai_api_key_ssm_parameter}" --with-decryption --query "Parameter.Value" --output text
+  "`$env:OPENAI_API_KEY = '$openaiKey'" | Add-Content $envFile
+}
+
+$collectScript = "$StateDir\collect.ps1"
+@"
+`$ErrorActionPreference = "Stop"
+. "$envFile"
+Set-Location "$ScenarioRoot"
+npm run collect:local -- --instance `$env:OPENCLAW_SCENARIO_ID
+"@ | Set-Content $collectScript
+
+$gatewayScript = "$StateDir\gateway.ps1"
+@"
+`$ErrorActionPreference = "Stop"
+. "$envFile"
+Set-Location "$StateDir"
+openclaw gateway run --bind loopback --port `$env:OPENCLAW_GATEWAY_PORT --auth none --allow-unconfigured
+"@ | Set-Content $gatewayScript
+
+$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$gatewayScript`""
+$trigger = New-ScheduledTaskTrigger -AtStartup
+Register-ScheduledTask -TaskName "OpenClawScenarioGateway" -Action $action -Trigger $trigger -RunLevel Highest -Force
+Start-ScheduledTask -TaskName "OpenClawScenarioGateway"
+
+$collectAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$collectScript`""
+$collectTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Minutes 10)
+Register-ScheduledTask -TaskName "OpenClawScenarioCollect" -Action $collectAction -Trigger $collectTrigger -RunLevel Highest -Force
+</powershell>

@@ -36,11 +36,12 @@ Do not publish:
 1. Land this static site and fixture registry.
 2. Create the GitHub repo `romneyda/openclaw-scenarios`.
 3. Enable GitHub Pages from the `pages` workflow.
-4. Bring up two Linux instances first: `linux-main-webchat` and `linux-slack-workspace`.
-5. Add real collector output for health, channel status, version, update status, stability summary, and transcript counters.
-6. Add macOS and Windows hosts once the collector shape is stable.
-7. Add channel-specific scenario drivers only where normal OpenClaw standing orders are insufficient.
-8. After two releases, decide what should move into OpenClaw QA proper.
+4. Deploy AWS Linux and Windows hosts from `infra/aws`.
+5. Run `npm run aws:collect` and replace fixture status with real SSM-collected snapshots.
+6. Add macOS EC2 Mac hosts only after accepting Dedicated Host cost.
+7. Add channel-specific secret bootstrap scripts for Slack, Discord, Telegram, WhatsApp, Matrix, and iMessage.
+8. Add real transcript excerpt sanitizers on the hosts.
+9. After two releases, decide what should move into OpenClaw QA proper.
 
 ## Collector Shape
 

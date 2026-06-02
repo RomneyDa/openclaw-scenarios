@@ -4,3 +4,9 @@ dist/
 .env
 .env.*
 *.log
+private/
+.terraform/
+infra/aws/.terraform/
+*.tfstate
+*.tfstate.*
+infra/aws/terraform.tfvars

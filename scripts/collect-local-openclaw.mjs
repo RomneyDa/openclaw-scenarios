@@ -110,7 +110,11 @@ const status = {
 };
 
 const outputPath = args.out ?? instance.statusPath;
-const outputUrl = new URL(outputPath, root);
-await fs.mkdir(path.dirname(outputUrl.pathname), { recursive: true });
-await fs.writeFile(outputUrl, `${JSON.stringify(status, null, 2)}\n`);
-console.log(`wrote ${outputPath}`);
+if (args.print === "true") {
+  console.log(JSON.stringify(status, null, 2));
+} else {
+  const outputUrl = new URL(outputPath, root);
+  await fs.mkdir(path.dirname(outputUrl.pathname), { recursive: true });
+  await fs.writeFile(outputUrl, `${JSON.stringify(status, null, 2)}\n`);
+  console.log(`wrote ${outputPath}`);
+}

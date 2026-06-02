@@ -6,7 +6,13 @@
   "scripts": {
     "build": "node scripts/build-site.mjs",
     "check": "node scripts/check-data.mjs && node scripts/build-site.mjs",
-    "collect:local": "node scripts/collect-local-openclaw.mjs"
+    "collect:local": "node scripts/collect-local-openclaw.mjs",
+    "aws:put-secret": "node scripts/aws/put-secret.mjs",
+    "aws:targets": "node scripts/aws/targets-from-terraform.mjs",
+    "aws:collect": "node scripts/aws/collect-fleet.mjs",
+    "infra:init": "${TERRAFORM_BIN:-terraform} -chdir=infra/aws init",
+    "infra:plan": "${TERRAFORM_BIN:-terraform} -chdir=infra/aws plan",
+    "infra:apply": "${TERRAFORM_BIN:-terraform} -chdir=infra/aws apply"
   },
   "engines": {
     "node": ">=22.19"
