@@ -6,6 +6,8 @@ This repository is intentionally separate from `openclaw/openclaw`. It is for st
 
 ## What Lives Here
 
+- `CHARACTERS.md` - long-running scenario characters and their user flows.
+- `FEATURES.md` - feature inventory grouped by product surface and coverage area.
 - `data/fleet.json` - public registry of longhaul scenario instances.
 - `data/status/*.json` - sanitized latest status snapshots.
 - `data/transcripts/*.json` - short redacted transcript excerpts.
