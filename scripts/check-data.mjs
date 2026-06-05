@@ -19,7 +19,7 @@ function fail(message) {
   throw new Error(message);
 }
 
-function assertPublicString(value, context) {
+function assertSafeCommittedString(value, context) {
   if (typeof value !== "string") {
     return;
   }
@@ -30,18 +30,18 @@ function assertPublicString(value, context) {
   }
 }
 
-function walkPublicStrings(value, context) {
+function walkSafeCommittedStrings(value, context) {
   if (typeof value === "string") {
-    assertPublicString(value, context);
+    assertSafeCommittedString(value, context);
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((entry, index) => walkPublicStrings(entry, `${context}[${index}]`));
+    value.forEach((entry, index) => walkSafeCommittedStrings(entry, `${context}[${index}]`));
     return;
   }
   if (value && typeof value === "object") {
     for (const [key, entry] of Object.entries(value)) {
-      walkPublicStrings(entry, `${context}.${key}`);
+      walkSafeCommittedStrings(entry, `${context}.${key}`);
     }
   }
 }
@@ -84,8 +84,8 @@ for (const instance of fleet.instances) {
   }
 }
 
-walkPublicStrings(fleet, "fleet");
-walkPublicStrings(await readJson("data/incidents.json"), "incidents");
+walkSafeCommittedStrings(fleet, "fleet");
+walkSafeCommittedStrings(await readJson("data/incidents.json"), "incidents");
 
 const statusDir = new URL("data/status", root);
 for (const name of await fs.readdir(statusDir)) {
@@ -93,7 +93,7 @@ for (const name of await fs.readdir(statusDir)) {
     continue;
   }
   const status = await readJson(path.posix.join("data/status", name));
-  walkPublicStrings(status, `status.${name}`);
+  walkSafeCommittedStrings(status, `status.${name}`);
 }
 
 const transcriptDir = new URL("data/transcripts", root);
@@ -102,7 +102,7 @@ for (const name of await fs.readdir(transcriptDir)) {
     continue;
   }
   const transcript = await readJson(path.posix.join("data/transcripts", name));
-  walkPublicStrings(transcript, `transcripts.${name}`);
+  walkSafeCommittedStrings(transcript, `transcripts.${name}`);
 }
 
 console.log(`validated ${fleet.instances.length} scenario instances`);

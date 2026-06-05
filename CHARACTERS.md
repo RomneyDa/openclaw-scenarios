@@ -11,9 +11,9 @@ tied to one machine. If a channel, provider, or device is unavailable on a host,
 the scenario runner should mark that surface blocked or skipped rather than
 resetting the character.
 
-Public reporting must stay redacted. Character status can publish coverage,
+Committed reporting must stay redacted. Character status can include coverage,
 health, counters, incident summaries, and short sanitized excerpts. It must not
-publish secrets, phone numbers, raw channel IDs, private hostnames, full logs, or
+include secrets, phone numbers, raw channel IDs, private hostnames, full logs, or
 full transcripts.
 
 ## Shared Expectations
@@ -25,7 +25,7 @@ Every character should accumulate real state over time:
 - at least one restart or update across the character lifetime;
 - occasional model switch or fallback path;
 - realistic attachments or tool output where the character's job calls for it;
-- read-only public status with current health, recent activity, coverage, and
+- operator status with current health, recent activity, coverage, and
   known blockers.
 
 The flows below are intentionally practical. They are meant to exercise product
@@ -110,7 +110,7 @@ check-ins.
    - Send an inbound voice note describing a small task.
    - Require STT, task extraction, confirmation, and a short TTS or text reply.
    - Later ask, "What did I ask you to handle earlier?" and verify recall without
-     leaking raw transcript details into public status.
+     leaking raw transcript details into committed status.
 
 3. **Group mention gating**
    - In a small group chat, send unrelated chatter with no mention.
@@ -122,7 +122,7 @@ check-ins.
    - Ask for a short status update over SMS after a reminder or failed channel
      delivery.
    - Verify explicit SMS delivery, allowlist enforcement, and redacted phone
-     identifiers in the public status artifact.
+     identifiers in the status artifact.
 
 5. **Device permission boundary**
    - Ask for a paired-node action such as a screen snapshot or file transfer.
@@ -214,7 +214,7 @@ involved.
 
 6. **Live steering**
    - Start a longer team report, then send a steer/follow-up while it is running.
-   - Verify the active run incorporates the steer when allowed and the public
+   - Verify the active run incorporates the steer when allowed and the operator
      status records an active or completed run accurately.
 
 ## 3. The Enterprise Liaison
@@ -370,7 +370,7 @@ coverage point for supported coding harnesses.
 6. **Long command output**
    - Run a verbose build/test command.
    - Verify output compaction/truncation preserves actionable errors, does not
-     overflow the transcript, and public status reports only sanitized summaries.
+     overflow the transcript, and status reports only sanitized summaries.
 
 7. **Restart during active work**
    - Start a long repo task, restart/update the gateway, and resume.
@@ -422,7 +422,7 @@ time, and exercises advanced memory backends without becoming a coding agent.
    - Ask for a short research brief on a current topic.
    - Require web search, web fetch, source comparison, and a concise cited
      answer.
-   - Verify citations survive in memory or notes and public excerpts do not
+   - Verify citations survive in memory or notes and committed excerpts do not
      include raw private browsing data.
 
 2. **PDF ingestion**
@@ -557,7 +557,7 @@ do not hit.
 - STT transcript quality and model handoff.
 - TTS/realtime provider fallback.
 - Abort, steer, and cancellation during live audio.
-- Redacted audio/transcript summaries in public status.
+- Redacted audio/transcript summaries in operator status.
 
 ### Plugins And Providers
 
@@ -598,7 +598,7 @@ do not hit.
 
 6. **Audio privacy check**
    - Include a sensitive phrase in a test call.
-   - Verify public status shows only redacted summaries and never raw audio or
+   - Verify status shows only redacted summaries and never raw audio or
      full transcript content.
 
 ## 8. The Secure Archivist
@@ -625,7 +625,7 @@ regressions.
 - Pairing, devices, access groups, allowlists, and sandboxed group sessions.
 - Secret redaction, tool denial, approval denial, and policy checks.
 - Config migration from old states, doctor repairs, and update runs.
-- OTel, Prometheus, logs, health, and public incident summaries.
+- OTel, Prometheus, logs, health, and incident summaries.
 - Local model fallback such as Ollama or LM Studio.
 
 ### Coverage
@@ -664,7 +664,7 @@ regressions.
 3. **Pairing and device approval**
    - Connect a new Control UI device or channel node.
    - Exercise pending approval, approval upgrade, and revocation.
-   - Verify state survives restart and public status does not expose device
+   - Verify state survives restart and status does not expose device
      identifiers.
 
 4. **Tool denial and approval denial**

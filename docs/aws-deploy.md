@@ -82,16 +82,16 @@ npm run aws:targets
 npm run aws:collect
 ```
 
-7. Publish.
+7. Commit sanitized evidence when it is useful.
 
 ```bash
 git status -sb
-git add data/status dist
+git add data/status
 git commit -m "Refresh scenario fleet status"
 git push
 ```
 
-GitHub Pages rebuilds on push.
+Run `npm run build` locally when you want to inspect the generated dashboard.
 
 ## macOS Hosts
 

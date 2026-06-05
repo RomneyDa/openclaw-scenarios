@@ -14,7 +14,7 @@ file owns the product surfaces that those characters must exercise.
 - iMessage direct messages, native desktop service behavior, attachments,
   tapbacks, and macOS app integration.
 - SMS fallback delivery, phone-number allowlists, delivery status, and redacted
-  phone identifiers in public reports.
+  phone identifiers in committed reports.
 - Voice-call channels for inbound calls, outbound reminders, spoken replies,
   and post-call text summaries.
 
@@ -35,15 +35,15 @@ file owns the product surfaces that those characters must exercise.
   and permission-aware document actions.
 - Mattermost or Nextcloud Talk rooms, room routing, session separation, and
   enterprise deployment behavior.
-- Authenticated webhooks that create tasks, deliver channel reports, and publish
-  redacted public status.
+- Authenticated webhooks that create tasks, deliver channel reports, and record
+  redacted status.
 
 ### Private And Decentralized Channels
 
 - Matrix direct messages and rooms, including Matrix E2EE bootstrap,
   verification, recovery, restart replay, media, and replay dedupe.
 - Signal or comparable private-channel state, pairing, allowlists, restart
-  recovery, and safe public redaction.
+  recovery, and safe committed redaction.
 - Nostr or IRC fallback coverage for decentralized or low-dependency channels.
 
 ### Web And Local Channels
@@ -123,7 +123,7 @@ file owns the product surfaces that those characters must exercise.
   and call-attempt status.
 - Google Meet join, browser or meeting plugin behavior, credential-blocked
   reporting, and cleanup of meeting/browser state.
-- Audio privacy checks that publish only redacted summaries, not raw audio or
+- Audio privacy checks that record only redacted summaries, not raw audio or
   full transcripts.
 
 ## Coding Harnesses And Repository Work
@@ -206,14 +206,14 @@ file owns the product surfaces that those characters must exercise.
 
 ## Observability, Reporting, And Artifacts
 
-- Read-only public status with current health, recent activity, coverage, and
+- Read-only operator status with current health, recent activity, coverage, and
   known blockers.
 - Sanitized counters for sessions, messages, media, memory, context pressure,
   incidents, and task completions.
 - Incident summaries and short redacted excerpts.
 - Artifact links for screenshots, media proof, trace summaries, and relevant
   generated outputs.
-- OTel, Prometheus, logs, health, and public incident summaries that exclude
+- OTel, Prometheus, logs, health, and incident summaries that exclude
   prompt content, response content, raw diagnostic IDs, secrets, and private
   paths.
 - Status for active, completed, skipped, blocked, failed, and stale surfaces.
@@ -223,15 +223,15 @@ file owns the product surfaces that those characters must exercise.
 ## Privacy And Redaction
 
 - No secrets, tokens, credentials, phone numbers, raw channel IDs, private
-  hostnames, IP addresses, full logs, raw audio, or full transcripts in public
+  hostnames, IP addresses, full logs, raw audio, or full transcripts in committed
   artifacts.
-- Redacted public excerpts only.
+- Redacted committed excerpts only.
 - Webhook redaction, personal identifier redaction, browser profile redaction,
   and media path redaction.
 - Transcript and log sanitizers on scenario hosts before data lands in this
-  public repo.
+  repo.
 - Privacy checks for encrypted channels, audio workflows, observability exports,
-  generated media delivery, and public status pages.
+  generated media delivery, and status views.
 
 ## Character-To-Feature Map
 

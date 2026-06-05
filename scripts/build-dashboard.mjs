@@ -68,7 +68,7 @@ const osColumns = ["linux", "macos", "windows"]
         ${matching
           .map(
             (instance) =>
-              `<a class="topology-node ${escapeHtml(instance.status.state)}" href="#${escapeHtml(instance.id)}" title="${escapeHtml(instance.title)}">${escapeHtml(instance.host.publicLabel)}</a>`
+              `<a class="topology-node ${escapeHtml(instance.status.state)}" href="#${escapeHtml(instance.id)}" title="${escapeHtml(instance.title)}">${escapeHtml(instance.host.label)}</a>`
           )
           .join("")}
       </div>
@@ -114,7 +114,7 @@ const instanceCards = instances
         </section>
         <section>
           <h3>Redacted Excerpt</h3>
-          <div class="excerpt">${transcript || "<p><span>No public excerpt yet.</span></p>"}</div>
+          <div class="excerpt">${transcript || "<p><span>No excerpt recorded yet.</span></p>"}</div>
         </section>
       </div>
     </article>`;
@@ -140,9 +140,9 @@ const html = `<!doctype html>
     <main>
       <section class="overview">
         <div>
-          <p class="eyebrow">Public read-only longhaul status</p>
+          <p class="eyebrow">Longhaul scenario lab</p>
           <h1>OpenClaw Scenario Fleet</h1>
-          <p class="summary">Persistent OpenClaw instances with real user-shaped state across channels, operating systems, media histories, updates, and background workflows.</p>
+          <p class="summary">Persistent OpenClaw scenario characters with real user-shaped state across channels, operating systems, media histories, updates, and background workflows.</p>
         </div>
         <dl class="summary-grid">
           <div><dt>Instances</dt><dd>${instances.length}</dd></div>

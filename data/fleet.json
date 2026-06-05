@@ -14,7 +14,7 @@
       },
       "host": {
         "manager": "ocm",
-        "publicLabel": "linux-a"
+        "label": "linux-a"
       },
       "release": {
         "channel": "beta",
@@ -38,7 +38,7 @@
       },
       "host": {
         "manager": "ssh",
-        "publicLabel": "linux-b"
+        "label": "linux-b"
       },
       "release": {
         "channel": "stable",
@@ -62,7 +62,7 @@
       },
       "host": {
         "manager": "ocm",
-        "publicLabel": "linux-c"
+        "label": "linux-c"
       },
       "release": {
         "channel": "beta",
@@ -86,7 +86,7 @@
       },
       "host": {
         "manager": "ssh",
-        "publicLabel": "linux-arm"
+        "label": "linux-arm"
       },
       "release": {
         "channel": "stable",
@@ -110,7 +110,7 @@
       },
       "host": {
         "manager": "ocm",
-        "publicLabel": "mac-a"
+        "label": "mac-a"
       },
       "release": {
         "channel": "beta",
@@ -134,7 +134,7 @@
       },
       "host": {
         "manager": "ssh",
-        "publicLabel": "mac-b"
+        "label": "mac-b"
       },
       "release": {
         "channel": "stable",
@@ -158,7 +158,7 @@
       },
       "host": {
         "manager": "ocm",
-        "publicLabel": "windows-a"
+        "label": "windows-a"
       },
       "release": {
         "channel": "beta",
@@ -182,7 +182,7 @@
       },
       "host": {
         "manager": "ssh",
-        "publicLabel": "windows-b"
+        "label": "windows-b"
       },
       "release": {
         "channel": "stable",
