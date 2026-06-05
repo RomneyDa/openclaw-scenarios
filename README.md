@@ -28,6 +28,9 @@ coverage inventory.
 Character configs live in `scenarios/<name>/config.json`. They contain no
 secrets. Any channel token, profile, workspace, room, phone number, credential,
 or device-specific value is referenced through an environment variable name.
+Use `.env.example` as the starting point for a local `.env`; it lists every
+environment variable required by the current scenario set with short sourcing
+notes.
 
 Run:
 

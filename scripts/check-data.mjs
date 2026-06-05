@@ -3,6 +3,7 @@ import path from "node:path";
 
 const root = new URL("..", import.meta.url);
 const scenariosDir = new URL("scenarios/", root);
+const envTemplateUrl = new URL(".env.example", root);
 
 const forbiddenPatterns = [
   /\b\d{3}[- .]?\d{3}[- .]?\d{4}\b/u,
@@ -72,7 +73,8 @@ function collectEnvPlaceholders(value, envNames = new Set()) {
     if (value.source === "env" && typeof value.id === "string") {
       envNames.add(value.id);
     }
-    for (const entry of Object.values(value)) {
+    for (const [key, entry] of Object.entries(value)) {
+      collectEnvPlaceholders(key, envNames);
       collectEnvPlaceholders(entry, envNames);
     }
   }
@@ -87,6 +89,18 @@ function declaredEnv(config) {
   ]);
 }
 
+async function readEnvTemplateNames() {
+  const text = await fs.readFile(envTemplateUrl, "utf8");
+  const names = new Set();
+  for (const line of text.split(/\r?\n/u)) {
+    const match = line.match(/^([A-Z][A-Z0-9_]*)=/u);
+    if (match) {
+      names.add(match[1]);
+    }
+  }
+  return names;
+}
+
 const scenarioNames = (await fs.readdir(scenariosDir, { withFileTypes: true }))
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
@@ -97,6 +111,7 @@ if (scenarioNames.length !== 8) {
 }
 
 const ids = new Set();
+const allRequiredEnv = new Set();
 for (const scenarioName of scenarioNames) {
   const configUrl = new URL(`${scenarioName}/config.json`, scenariosDir);
   const config = await readJson(configUrl);
@@ -122,11 +137,20 @@ for (const scenarioName of scenarioNames) {
     fail(`${context} must include flows`);
   }
   assertEnvNames(config.requiredEnv ?? [], `${context}.requiredEnv`);
+  for (const name of config.requiredEnv ?? []) {
+    allRequiredEnv.add(name);
+  }
   for (const channel of config.channels) {
     assertEnvNames(channel.requiredEnv ?? [], `${context}.channels.${channel.id}.requiredEnv`);
+    for (const name of channel.requiredEnv ?? []) {
+      allRequiredEnv.add(name);
+    }
   }
   for (const provider of config.providers ?? []) {
     assertEnvNames(provider.requiredEnv ?? [], `${context}.providers.${provider.id}.requiredEnv`);
+    for (const name of provider.requiredEnv ?? []) {
+      allRequiredEnv.add(name);
+    }
   }
   for (const flow of config.flows) {
     if (!flow.id || !flow.title || !Array.isArray(flow.steps) || !Array.isArray(flow.assertions)) {
@@ -140,6 +164,12 @@ for (const scenarioName of scenarioNames) {
     fail(`${context} uses undeclared env placeholders: ${missingDeclaredEnv.sort().join(", ")}`);
   }
   walkStrings(config, context);
+}
+
+const envTemplateNames = await readEnvTemplateNames();
+const missingFromEnvTemplate = [...allRequiredEnv].filter((name) => !envTemplateNames.has(name));
+if (missingFromEnvTemplate.length > 0) {
+  fail(`.env.example is missing required env vars: ${missingFromEnvTemplate.sort().join(", ")}`);
 }
 
 console.log(`validated ${scenarioNames.length} character configs`);

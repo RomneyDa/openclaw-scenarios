@@ -41,7 +41,8 @@ function collectEnvPlaceholders(value, envNames = new Set()) {
     if (value.source === "env" && typeof value.id === "string") {
       envNames.add(value.id);
     }
-    for (const entry of Object.values(value)) {
+    for (const [key, entry] of Object.entries(value)) {
+      collectEnvPlaceholders(key, envNames);
       collectEnvPlaceholders(entry, envNames);
     }
   }
