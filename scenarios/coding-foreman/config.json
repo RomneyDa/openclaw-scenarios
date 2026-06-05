@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "id": "coding-foreman",
+  "name": "Coding Foreman",
+  "summary": "A repository-work character that exercises Codex, ACP harnesses, subagents, approvals, long logs, and local repo tools.",
+  "primaryJob": "Prove real coding-agent flows through the surfaces users actually touch: TUI, WebChat, Control UI, Slack thread binding, and local workspaces.",
+  "requiredEnv": [
+    "OPENCLAW_CODING_FOREMAN_REPO_DIR",
+    "OPENCLAW_CODING_FOREMAN_STATE_DIR",
+    "SLACK_APP_TOKEN",
+    "SLACK_BOT_TOKEN"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-workspace-and-agent-state",
+    "stateDirEnv": "OPENCLAW_CODING_FOREMAN_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "tui",
+      "name": "TUI",
+      "requiredEnv": [
+        "OPENCLAW_CODING_FOREMAN_REPO_DIR"
+      ],
+      "surfaces": [
+        "interactive-session",
+        "permissions",
+        "long-output",
+        "patch-review"
+      ]
+    },
+    {
+      "id": "webchat-control-ui",
+      "name": "WebChat / Control UI",
+      "requiredEnv": [
+        "OPENCLAW_CONTROL_UI_BASE_URL"
+      ],
+      "surfaces": [
+        "chat",
+        "approval-ui",
+        "tool-events",
+        "status"
+      ]
+    },
+    {
+      "id": "slack-thread-binding",
+      "name": "Slack Thread Binding",
+      "requiredEnv": [
+        "OPENCLAW_SLACK_CODING_THREAD",
+        "SLACK_BOT_TOKEN"
+      ],
+      "surfaces": [
+        "thread-bound-session",
+        "final-route"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI/Codex route",
+      "role": "primary-coding-runtime",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "anthropic",
+      "name": "Claude ACP",
+      "role": "acp-harness",
+      "requiredEnv": [
+        "ANTHROPIC_API_KEY"
+      ]
+    },
+    {
+      "id": "google",
+      "name": "Gemini ACP",
+      "role": "acp-harness",
+      "requiredEnv": [
+        "GOOGLE_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "acpx",
+    "codex",
+    "codex-supervisor",
+    "opencode",
+    "copilot",
+    "diffs",
+    "tokenjuice",
+    "policy"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/tools/acp-agents.md",
+      "docs/providers/openai.md",
+      "docs/tools/exec-approvals.md",
+      "docs/tools/tokenjuice.md",
+      "docs/tools/subagents.md",
+      "docs/web/tui.md",
+      "docs/web/control-ui.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install @openclaw/acpx",
+      "openclaw plugins install @openclaw/codex",
+      "openclaw plugins install @openclaw/codex-supervisor",
+      "openclaw plugins install clawhub:@openclaw/tokenjuice"
+    ],
+    "configPatch": {
+      "auth": {
+        "order": {
+          "openai": [
+            "openai"
+          ]
+        }
+      },
+      "models": {
+        "default": "openai/gpt-5.5"
+      },
+      "channels": {
+        "slack": {
+          "enabled": true,
+          "mode": "socket",
+          "appToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "SLACK_APP_TOKEN"
+          },
+          "botToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "SLACK_BOT_TOKEN"
+          },
+          "channels": {
+            "${OPENCLAW_SLACK_CODING_CHANNEL_ID}": {
+              "requireMention": true
+            }
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "acpx": {
+            "enabled": true
+          },
+          "codex": {
+            "enabled": true
+          },
+          "codex-supervisor": {
+            "enabled": true
+          },
+          "diffs": {
+            "enabled": true
+          },
+          "tokenjuice": {
+            "enabled": true
+          },
+          "policy": {
+            "enabled": true
+          }
+        }
+      },
+      "tools": {
+        "exec": {
+          "mode": "ask"
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "native-codex-bound-thread",
+      "title": "Native Codex bound thread",
+      "steps": [
+        "Bind Slack or WebChat to native Codex",
+        "Ask for repo inspection",
+        "Apply a small patch",
+        "Run verification"
+      ],
+      "assertions": [
+        "Codex events are visible",
+        "permission requests appear",
+        "patch output is usable",
+        "final reply routes back to bound conversation"
+      ]
+    },
+    {
+      "id": "acp-harness-matrix",
+      "title": "ACP harness matrix",
+      "steps": [
+        "Run one small task through each available ACP harness"
+      ],
+      "assertions": [
+        "available harnesses start",
+        "permissions are handled",
+        "missing auth returns precise blocked reason"
+      ]
+    },
+    {
+      "id": "subagent-fanout",
+      "title": "Subagent fanout",
+      "steps": [
+        "Ask for a multi-topic audit",
+        "Spawn isolated child agents",
+        "Synthesize results"
+      ],
+      "assertions": [
+        "child completions are treated as evidence",
+        "parent produces one coherent answer",
+        "stale links are not followed blindly"
+      ]
+    },
+    {
+      "id": "approval-sandbox-boundary",
+      "title": "Approval and sandbox boundary",
+      "steps": [
+        "Run an allowed command",
+        "Run an approval-required command",
+        "Request a denied action"
+      ],
+      "assertions": [
+        "approval UI appears",
+        "denial metadata is accurate",
+        "denied action does not continue"
+      ]
+    },
+    {
+      "id": "restart-active-work",
+      "title": "Restart during active work",
+      "steps": [
+        "Start long repo task",
+        "Restart OpenClaw",
+        "Resume"
+      ],
+      "assertions": [
+        "session state survives",
+        "partial output is preserved",
+        "final transcript integrity is usable locally"
+      ]
+    }
+  ],
+  "artifacts": [
+    "patch diff",
+    "test command summary",
+    "tool event timeline",
+    "approval decisions"
+  ],
+  "neverCommit": [
+    "repo private paths",
+    "full command logs",
+    "raw transcripts",
+    "credential files"
+  ]
+}

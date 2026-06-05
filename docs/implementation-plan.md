@@ -1,60 +1,50 @@
-# Longhaul Scenario Fleet Plan
+# Scenario Lab Plan
 
 ## Goal
 
-Run 8 to 10 persistent OpenClaw scenario characters that behave like real users.
-The first version should prove a visualizable operator loop without adding
-OpenClaw core code.
+Run persistent OpenClaw scenario characters on whatever local device or host
+pulls this repo. Each character should behave like a real user, keep long-lived
+state, and exercise product surfaces through realistic flows rather than
+isolated checklist prompts.
 
-## Architecture
+## Repo Shape
 
-- Instances run on real hosts or OCM environments.
-- Each instance has a stable persona, goal, channel mix, and release channel.
-- Instance state persists across releases.
-- A collector pulls only redacted scenario status into this repo.
-- A local dashboard renders the latest scenario state from `dist/`.
+- `scenarios/<name>/config.json` defines character setup, env requirements,
+  plugins, flows, assertions, and expected artifacts.
+- `CHARACTERS.md` explains the user archetypes.
+- `FEATURES.md` tracks product coverage by feature category.
+- `scripts/check-data.mjs` validates configs without needing OpenClaw or channel
+  credentials.
+- `scripts/build-dashboard.mjs` renders a local dashboard from configs.
 
-## Data Contract
+## Runtime Model
 
-Commit only:
+- The runner uses the current machine or user-provided host.
+- Configs reference secrets and private IDs by environment variable name.
+- Runtime state, transcripts, screenshots, recordings, logs, and channel
+  artifacts stay local unless an operator explicitly exports a sanitized proof
+  bundle.
+- Missing channels, providers, or devices should mark the surface blocked or
+  skipped, not reset the character.
 
-- instance id, OS family, release channel, current version
-- enabled channels and feature families
-- pass/watch/fail/unknown state
-- bounded counters such as session count, message count, media count, memory, context pressure
-- short redacted transcript excerpts
-- sanitized incident summaries and artifact links
+## First Useful Loop
 
-Do not commit:
+1. Pick one character config.
+2. Check required environment variables.
+3. Start or attach to the configured OpenClaw runtime.
+4. Run one episode from the character's `flows`.
+5. Capture local evidence: UI screenshot, channel message link, event timeline,
+   tool log summary, or generated media path.
+6. Record pass, fail, blocked, or skipped locally.
+7. Keep the character state for the next run.
 
-- secrets, tokens, raw hostnames, IP addresses, phone numbers, raw channel ids
-- full logs or full transcripts
-- Control UI links or Gateway tokens
-- credential broker payloads
-- private workspace paths
+## Config Maintenance
 
-## Rollout
+When adding or changing a character:
 
-1. Land the character docs, feature inventory, and fixture registry.
-2. Create the GitHub repo `romneyda/openclaw-scenarios`.
-3. Generate a local dashboard for operator review.
-4. Deploy AWS Linux and Windows hosts from `infra/aws`.
-5. Run `npm run aws:collect` and replace fixture status with real SSM-collected snapshots.
-6. Add macOS EC2 Mac hosts only after accepting Dedicated Host cost.
-7. Add channel-specific secret bootstrap scripts for Slack, Discord, Telegram, WhatsApp, Matrix, and iMessage.
-8. Add real transcript excerpt sanitizers on the hosts.
-9. After two releases, decide what should move into OpenClaw QA proper.
-
-## Collector Shape
-
-The first collector should be deliberately boring:
-
-- read `data/fleet.json`
-- connect to an operator-managed host by OCM, SSH, or a local command wrapper
-- run read-only OpenClaw commands
-- normalize to `data/status/<instance>.json`
-- write redacted transcript excerpts only when a host-side sanitizer emits them
-
-The repo should not know how to authenticate to channels or hosts. Operators run
-the collector locally or through remote management, inspect the dashboard, and
-commit only sanitized output that is useful for repeatable scenario evidence.
+- keep secrets out of JSON;
+- use env var names for credentials, rooms, phone numbers, workspaces, and local
+  paths;
+- prefer realistic user flows over synthetic command probes;
+- keep assertions semantic rather than exact wording based;
+- do not add deployment-specific assumptions.

@@ -206,7 +206,7 @@ file owns the product surfaces that those characters must exercise.
 
 ## Observability, Reporting, And Artifacts
 
-- Read-only operator status with current health, recent activity, coverage, and
+- Local run summaries with current health, recent activity, coverage, and
   known blockers.
 - Sanitized counters for sessions, messages, media, memory, context pressure,
   incidents, and task completions.
@@ -231,7 +231,7 @@ file owns the product surfaces that those characters must exercise.
 - Transcript and log sanitizers on scenario hosts before data lands in this
   repo.
 - Privacy checks for encrypted channels, audio workflows, observability exports,
-  generated media delivery, and status views.
+  generated media delivery, and local evidence views.
 
 ## Character-To-Feature Map
 

@@ -1,0 +1,265 @@
+{
+  "schemaVersion": 1,
+  "id": "personal-concierge",
+  "name": "Personal Concierge",
+  "summary": "A phone-first personal assistant with messy long-term context, reminders, media-heavy messages, and remembered preferences.",
+  "primaryJob": "Handle everyday personal assistant tasks across phone-style channels while preserving useful memory and respecting device boundaries.",
+  "requiredEnv": [
+    "ELEVENLABS_API_KEY",
+    "OPENAI_API_KEY",
+    "OPENCLAW_IMESSAGE_DB_PATH",
+    "OPENCLAW_IMSG_CLI_PATH",
+    "OPENCLAW_PERSONAL_CONCIERGE_STATE_DIR",
+    "OPENCLAW_PERSONAL_WHATSAPP_ALLOWED_FROM",
+    "SMS_PUBLIC_WEBHOOK_URL",
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_PHONE_NUMBER"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-state-across-runs",
+    "stateDirEnv": "OPENCLAW_PERSONAL_CONCIERGE_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "whatsapp",
+      "name": "WhatsApp",
+      "requiredEnv": [
+        "OPENCLAW_PERSONAL_WHATSAPP_ALLOWED_FROM"
+      ],
+      "surfaces": [
+        "dm",
+        "small-group",
+        "qr-session",
+        "images",
+        "voice-notes",
+        "reactions",
+        "mention-gating"
+      ]
+    },
+    {
+      "id": "imessage",
+      "name": "iMessage",
+      "requiredEnv": [
+        "OPENCLAW_IMESSAGE_DB_PATH",
+        "OPENCLAW_IMSG_CLI_PATH"
+      ],
+      "surfaces": [
+        "dm",
+        "attachments",
+        "tapbacks",
+        "native-desktop-state"
+      ]
+    },
+    {
+      "id": "sms",
+      "name": "SMS",
+      "requiredEnv": [
+        "SMS_PUBLIC_WEBHOOK_URL",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_PHONE_NUMBER"
+      ],
+      "surfaces": [
+        "fallback-delivery",
+        "allowlist",
+        "short-status"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "primary-model",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "deepgram",
+      "name": "Deepgram",
+      "role": "voice-note-stt",
+      "requiredEnv": [
+        "DEEPGRAM_API_KEY"
+      ]
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "role": "short-tts",
+      "requiredEnv": [
+        "ELEVENLABS_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "memory-core",
+    "memory-lancedb",
+    "phone-control",
+    "file-transfer",
+    "openai",
+    "deepgram",
+    "elevenlabs"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/channels/whatsapp.md",
+      "docs/channels/imessage.md",
+      "docs/channels/sms.md",
+      "docs/tools/tts.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install clawhub:@openclaw/whatsapp",
+      "openclaw channels login --channel whatsapp",
+      "openclaw pairing list whatsapp",
+      "openclaw pairing approve whatsapp <CODE>"
+    ],
+    "configPatch": {
+      "channels": {
+        "whatsapp": {
+          "dmPolicy": "pairing",
+          "allowFrom": [
+            "${OPENCLAW_PERSONAL_WHATSAPP_ALLOWED_FROM}"
+          ],
+          "groupPolicy": "allowlist",
+          "groupAllowFrom": [
+            "${OPENCLAW_PERSONAL_WHATSAPP_ALLOWED_FROM}"
+          ],
+          "groups": {
+            "${OPENCLAW_PERSONAL_WHATSAPP_GROUP_ID}": {
+              "requireMention": true
+            }
+          }
+        },
+        "imessage": {
+          "enabled": true,
+          "cliPath": "${OPENCLAW_IMSG_CLI_PATH}",
+          "dbPath": "${OPENCLAW_IMESSAGE_DB_PATH}",
+          "dmPolicy": "pairing",
+          "includeAttachments": true
+        },
+        "sms": {
+          "enabled": true,
+          "accountSid": "${TWILIO_ACCOUNT_SID}",
+          "authToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "TWILIO_AUTH_TOKEN"
+          },
+          "fromNumber": "${TWILIO_PHONE_NUMBER}",
+          "publicWebhookUrl": "${SMS_PUBLIC_WEBHOOK_URL}",
+          "dmPolicy": "pairing"
+        }
+      },
+      "messages": {
+        "tts": {
+          "providers": {
+            "openai": {
+              "apiKey": "${OPENAI_API_KEY}"
+            },
+            "elevenlabs": {
+              "apiKey": "${ELEVENLABS_API_KEY}"
+            }
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "memory-core": {
+            "enabled": true
+          },
+          "memory-lancedb": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "photo-reminder-memory",
+      "title": "Photo reminder with memory carryover",
+      "steps": [
+        "Send a WhatsApp photo",
+        "Ask for a summary",
+        "Ask the assistant to remember a preference",
+        "Schedule a later reminder"
+      ],
+      "assertions": [
+        "reply returns in WhatsApp",
+        "reminder fires in the originating channel",
+        "preference is searchable later",
+        "photo is represented as an attachment"
+      ]
+    },
+    {
+      "id": "voice-note-follow-through",
+      "title": "Voice-note follow-through",
+      "steps": [
+        "Send a voice note describing a task",
+        "Confirm extracted task",
+        "Ask later what was requested"
+      ],
+      "assertions": [
+        "STT produced usable text",
+        "task is confirmed",
+        "later recall works without exposing raw transcript"
+      ]
+    },
+    {
+      "id": "group-mention-gating",
+      "title": "Group mention gating",
+      "steps": [
+        "Send unrelated group chatter",
+        "Mention the assistant with a planning request"
+      ],
+      "assertions": [
+        "no visible reply before mention",
+        "mentioned request gets concise answer",
+        "quiet context is used only when configured"
+      ]
+    },
+    {
+      "id": "sms-fallback",
+      "title": "SMS fallback",
+      "steps": [
+        "Trigger a reminder or failed channel delivery",
+        "Ask for SMS status"
+      ],
+      "assertions": [
+        "SMS delivery is explicit",
+        "allowlist is enforced",
+        "phone identifiers stay out of committed artifacts"
+      ]
+    },
+    {
+      "id": "device-boundary",
+      "title": "Device permission boundary",
+      "steps": [
+        "Request a paired-node action",
+        "Approve when available",
+        "Repeat with unavailable capability"
+      ],
+      "assertions": [
+        "approval path is visible",
+        "unavailable capability is reported honestly",
+        "no action is faked"
+      ]
+    }
+  ],
+  "artifacts": [
+    "channel screenshots",
+    "reminder event id",
+    "memory lookup summary",
+    "attachment metadata summary"
+  ],
+  "neverCommit": [
+    "transcripts",
+    "phone numbers",
+    "raw channel ids",
+    "voice note audio",
+    "device identifiers"
+  ]
+}

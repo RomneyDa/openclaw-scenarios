@@ -1,0 +1,273 @@
+{
+  "schemaVersion": 1,
+  "id": "team-dispatcher",
+  "name": "Team Dispatcher",
+  "summary": "A shared-room operator that watches team channels, handles threads, approvals, reactions, edits, deletes, and live steering.",
+  "primaryJob": "Exercise team-room routing and visible collaboration behavior without creating bot loops or duplicate replies.",
+  "requiredEnv": [
+    "DISCORD_APPLICATION_ID",
+    "DISCORD_BOT_TOKEN",
+    "MSTEAMS_APP_ID",
+    "MSTEAMS_APP_PASSWORD",
+    "MSTEAMS_TENANT_ID",
+    "OPENCLAW_DISCORD_OPERATOR_USER_ID",
+    "OPENCLAW_MSTEAMS_OPERATOR_ID",
+    "OPENCLAW_TEAM_DISPATCHER_STATE_DIR",
+    "SLACK_APP_TOKEN",
+    "SLACK_BOT_TOKEN"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-thread-history",
+    "stateDirEnv": "OPENCLAW_TEAM_DISPATCHER_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "slack",
+      "name": "Slack",
+      "requiredEnv": [
+        "OPENCLAW_SLACK_TRIAGE_CHANNEL_ID",
+        "SLACK_BOT_TOKEN"
+      ],
+      "surfaces": [
+        "shared-channel",
+        "thread",
+        "files",
+        "reactions",
+        "edits",
+        "deletes",
+        "message-tool"
+      ]
+    },
+    {
+      "id": "discord",
+      "name": "Discord",
+      "requiredEnv": [
+        "DISCORD_BOT_TOKEN",
+        "OPENCLAW_DISCORD_GUILD_ID",
+        "OPENCLAW_DISCORD_OPERATOR_USER_ID"
+      ],
+      "surfaces": [
+        "channel",
+        "thread",
+        "approval-buttons",
+        "reactions",
+        "edits",
+        "deletes",
+        "voice-presence"
+      ]
+    },
+    {
+      "id": "teams",
+      "name": "Microsoft Teams",
+      "requiredEnv": [
+        "MSTEAMS_APP_ID",
+        "MSTEAMS_APP_PASSWORD",
+        "MSTEAMS_TENANT_ID",
+        "OPENCLAW_MSTEAMS_OPERATOR_ID"
+      ],
+      "surfaces": [
+        "room-routing",
+        "handoff",
+        "status-update"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "primary-model",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "role": "fallback-model",
+      "requiredEnv": [
+        "ANTHROPIC_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "slack",
+    "discord",
+    "msteams",
+    "thread-ownership",
+    "diffs",
+    "policy"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/channels/slack.md",
+      "docs/channels/discord.md",
+      "docs/channels/msteams.md",
+      "docs/channels/groups.md",
+      "docs/tools/steer.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install @openclaw/slack",
+      "openclaw plugins install @openclaw/msteams",
+      "openclaw pairing list discord",
+      "openclaw pairing approve discord <CODE>"
+    ],
+    "configPatch": {
+      "channels": {
+        "slack": {
+          "enabled": true,
+          "mode": "socket",
+          "appToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "SLACK_APP_TOKEN"
+          },
+          "botToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "SLACK_BOT_TOKEN"
+          },
+          "groupPolicy": "allowlist",
+          "channels": {
+            "${OPENCLAW_SLACK_TRIAGE_CHANNEL_ID}": {
+              "requireMention": true
+            }
+          },
+          "streaming": {
+            "mode": "progress",
+            "progress": {
+              "nativeTaskCards": true,
+              "render": "rich"
+            }
+          }
+        },
+        "discord": {
+          "enabled": true,
+          "token": {
+            "source": "env",
+            "provider": "default",
+            "id": "DISCORD_BOT_TOKEN"
+          },
+          "applicationId": "${DISCORD_APPLICATION_ID}",
+          "dmPolicy": "allowlist",
+          "allowFrom": [
+            "${OPENCLAW_DISCORD_OPERATOR_USER_ID}"
+          ],
+          "guilds": {
+            "${OPENCLAW_DISCORD_GUILD_ID}": {
+              "requireMention": true
+            }
+          }
+        },
+        "msteams": {
+          "enabled": true,
+          "appId": "${MSTEAMS_APP_ID}",
+          "appPassword": "${MSTEAMS_APP_PASSWORD}",
+          "tenantId": "${MSTEAMS_TENANT_ID}",
+          "webhook": {
+            "port": 3978,
+            "path": "/api/messages"
+          },
+          "groupPolicy": "allowlist",
+          "groupAllowFrom": [
+            "${OPENCLAW_MSTEAMS_OPERATOR_ID}"
+          ]
+        }
+      },
+      "plugins": {
+        "entries": {
+          "thread-ownership": {
+            "enabled": true
+          },
+          "diffs": {
+            "enabled": true
+          },
+          "policy": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "threaded-triage",
+      "title": "Threaded triage",
+      "steps": [
+        "Post a Slack issue triage request",
+        "Let the dispatcher reply in-thread",
+        "Complete with a concise summary"
+      ],
+      "assertions": [
+        "reply stays in thread",
+        "parent channel has no duplicate top-level reply",
+        "final summary references the work"
+      ]
+    },
+    {
+      "id": "discord-approval-checkpoint",
+      "title": "Discord approval checkpoint",
+      "steps": [
+        "Trigger an approval-required task",
+        "Approve one request",
+        "Deny one request"
+      ],
+      "assertions": [
+        "approved path continues",
+        "denied path stops cleanly",
+        "decision is visible in event history"
+      ]
+    },
+    {
+      "id": "teams-escalation",
+      "title": "Teams escalation",
+      "steps": [
+        "Ask in Teams for a handoff based on prior Slack context"
+      ],
+      "assertions": [
+        "reply routes to Teams",
+        "context limits are explained",
+        "Slack thread route is preserved"
+      ]
+    },
+    {
+      "id": "reaction-edit-delete",
+      "title": "Reaction/edit/delete lifecycle",
+      "steps": [
+        "Send a message",
+        "React",
+        "Edit",
+        "Delete or supersede"
+      ],
+      "assertions": [
+        "meaningful lifecycle state is recorded",
+        "stale deleted content is not answered repeatedly"
+      ]
+    },
+    {
+      "id": "live-steering",
+      "title": "Live steering",
+      "steps": [
+        "Start a longer team report",
+        "Send a steer while active"
+      ],
+      "assertions": [
+        "active run incorporates the steer when allowed",
+        "status distinguishes active and completed work"
+      ]
+    }
+  ],
+  "artifacts": [
+    "thread links",
+    "approval event ids",
+    "channel delivery summary",
+    "route timeline"
+  ],
+  "neverCommit": [
+    "workspace ids",
+    "raw channel ids",
+    "bot tokens",
+    "full thread transcripts"
+  ]
+}

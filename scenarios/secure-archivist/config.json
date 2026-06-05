@@ -1,0 +1,339 @@
+{
+  "schemaVersion": 1,
+  "id": "secure-archivist",
+  "name": "Secure Archivist",
+  "summary": "A privacy and resilience character for encrypted rooms, policy, pairing, doctor/update behavior, observability, and local fallback.",
+  "primaryJob": "Expose bad upgrade behavior, config drift, redaction misses, encrypted-state problems, and tool-policy regressions.",
+  "requiredEnv": [
+    "MATRIX_ACCESS_TOKEN",
+    "MATRIX_HOMESERVER",
+    "NOSTR_PRIVATE_KEY",
+    "NOSTR_RELAY_URLS",
+    "OPENCLAW_IRC_CHANNEL",
+    "OPENCLAW_IRC_HOST",
+    "OPENCLAW_IRC_NICK",
+    "OPENCLAW_MATRIX_OPERATOR_USER",
+    "OPENCLAW_MATRIX_SECURE_ROOM",
+    "OPENCLAW_SECURE_ARCHIVIST_STATE_DIR",
+    "OPENCLAW_SIGNAL_ALLOWED_FROM",
+    "SEARXNG_BASE_URL",
+    "SIGNAL_ACCOUNT",
+    "SIGNAL_CLI_CONFIG_PATH",
+    "SIGNAL_CLI_PATH"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-encrypted-and-admin-state",
+    "stateDirEnv": "OPENCLAW_SECURE_ARCHIVIST_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "matrix-e2ee",
+      "name": "Matrix E2EE",
+      "requiredEnv": [
+        "MATRIX_ACCESS_TOKEN",
+        "MATRIX_HOMESERVER",
+        "MATRIX_RECOVERY_KEY",
+        "OPENCLAW_MATRIX_SECURE_ROOM"
+      ],
+      "surfaces": [
+        "encrypted-room",
+        "verification",
+        "restart-replay",
+        "media",
+        "dedupe"
+      ]
+    },
+    {
+      "id": "signal",
+      "name": "Signal",
+      "requiredEnv": [
+        "OPENCLAW_SIGNAL_ALLOWED_FROM",
+        "SIGNAL_ACCOUNT",
+        "SIGNAL_CLI_CONFIG_PATH",
+        "SIGNAL_CLI_PATH"
+      ],
+      "surfaces": [
+        "private-channel-state",
+        "pairing",
+        "allowlist"
+      ]
+    },
+    {
+      "id": "nostr-irc",
+      "name": "Nostr or IRC",
+      "requiredEnv": [
+        "NOSTR_PRIVATE_KEY",
+        "NOSTR_RELAY_URLS",
+        "OPENCLAW_IRC_CHANNEL",
+        "OPENCLAW_IRC_HOST",
+        "OPENCLAW_IRC_NICK"
+      ],
+      "surfaces": [
+        "low-dependency-channel",
+        "fallback-routing"
+      ]
+    },
+    {
+      "id": "control-ui-cli",
+      "name": "Control UI and CLI",
+      "requiredEnv": [
+        "OPENCLAW_CONTROL_UI_BASE_URL"
+      ],
+      "surfaces": [
+        "admin-config",
+        "doctor",
+        "update",
+        "logs",
+        "status"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "primary-model",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "local",
+      "name": "Ollama, LM Studio, vLLM, or SGLang",
+      "role": "local-fallback",
+      "requiredEnv": [
+        "OPENCLAW_LOCAL_MODEL_ENDPOINT"
+      ]
+    },
+    {
+      "id": "searxng",
+      "name": "SearXNG or DuckDuckGo",
+      "role": "key-free-search",
+      "requiredEnv": [
+        "SEARXNG_BASE_URL"
+      ]
+    }
+  ],
+  "plugins": [
+    "matrix",
+    "signal",
+    "nostr",
+    "irc",
+    "diagnostics-otel",
+    "diagnostics-prometheus",
+    "policy",
+    "tokenjuice",
+    "ollama",
+    "lmstudio",
+    "vllm",
+    "searxng"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/channels/matrix.md",
+      "docs/channels/signal.md",
+      "docs/channels/nostr.md",
+      "docs/channels/irc.md",
+      "docs/cli/doctor.md",
+      "docs/providers/ollama.md",
+      "docs/providers/lmstudio.md",
+      "docs/providers/vllm.md",
+      "docs/tools/searxng-search.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install @openclaw/matrix",
+      "openclaw plugins install @openclaw/nostr",
+      "openclaw matrix encryption setup",
+      "openclaw matrix verify status",
+      "openclaw doctor"
+    ],
+    "configPatch": {
+      "channels": {
+        "matrix": {
+          "enabled": true,
+          "homeserver": "${MATRIX_HOMESERVER}",
+          "accessToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "MATRIX_ACCESS_TOKEN"
+          },
+          "encryption": true,
+          "dm": {
+            "policy": "pairing",
+            "sessionScope": "per-room",
+            "threadReplies": "off"
+          },
+          "groupPolicy": "allowlist",
+          "groupAllowFrom": [
+            "${OPENCLAW_MATRIX_OPERATOR_USER}"
+          ],
+          "groups": {
+            "${OPENCLAW_MATRIX_SECURE_ROOM}": {
+              "requireMention": true
+            }
+          },
+          "autoJoin": "allowlist",
+          "autoJoinAllowlist": [
+            "${OPENCLAW_MATRIX_SECURE_ROOM}"
+          ],
+          "threadReplies": "inbound",
+          "replyToMode": "off",
+          "streaming": "partial"
+        },
+        "signal": {
+          "enabled": true,
+          "account": "${SIGNAL_ACCOUNT}",
+          "cliPath": "${SIGNAL_CLI_PATH}",
+          "configPath": "${SIGNAL_CLI_CONFIG_PATH}",
+          "dmPolicy": "pairing",
+          "allowFrom": [
+            "${OPENCLAW_SIGNAL_ALLOWED_FROM}"
+          ]
+        },
+        "nostr": {
+          "enabled": true,
+          "privateKey": "${NOSTR_PRIVATE_KEY}",
+          "relayUrls": [
+            "${NOSTR_RELAY_URLS}"
+          ]
+        },
+        "irc": {
+          "enabled": true,
+          "host": "${OPENCLAW_IRC_HOST}",
+          "port": 6697,
+          "tls": true,
+          "nick": "${OPENCLAW_IRC_NICK}",
+          "channels": [
+            "${OPENCLAW_IRC_CHANNEL}"
+          ]
+        }
+      },
+      "tools": {
+        "web": {
+          "search": {
+            "enabled": true,
+            "provider": "searxng"
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "diagnostics-otel": {
+            "enabled": true
+          },
+          "diagnostics-prometheus": {
+            "enabled": true
+          },
+          "policy": {
+            "enabled": true
+          },
+          "tokenjuice": {
+            "enabled": true
+          },
+          "ollama": {
+            "enabled": true
+          },
+          "lmstudio": {
+            "enabled": true
+          },
+          "vllm": {
+            "enabled": true
+          },
+          "searxng": {
+            "enabled": true,
+            "config": {
+              "baseUrl": "${SEARXNG_BASE_URL}"
+            }
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "matrix-e2ee-continuity",
+      "title": "Matrix E2EE continuity",
+      "steps": [
+        "Exchange encrypted messages",
+        "Restart OpenClaw",
+        "Send follow-up"
+      ],
+      "assertions": [
+        "E2EE state survives",
+        "replay dedupe works",
+        "room routing is correct"
+      ]
+    },
+    {
+      "id": "allowlist-enforcement",
+      "title": "Allowlist enforcement",
+      "steps": [
+        "Send authorized request",
+        "Send unauthorized request"
+      ],
+      "assertions": [
+        "authorized request works",
+        "unauthorized event is dropped or recorded safely",
+        "no actionable session is created"
+      ]
+    },
+    {
+      "id": "pairing-device-approval",
+      "title": "Pairing and device approval",
+      "steps": [
+        "Connect new Control UI device or channel node",
+        "Approve",
+        "Revoke",
+        "Restart"
+      ],
+      "assertions": [
+        "approval state survives restart",
+        "revocation works",
+        "device identifiers are not committed"
+      ]
+    },
+    {
+      "id": "doctor-update-health",
+      "title": "Doctor, update, and restart health",
+      "steps": [
+        "Run doctor",
+        "Run doctor fix where appropriate",
+        "Run update/restart"
+      ],
+      "assertions": [
+        "migrations preserve user state",
+        "runtime reads canonical state",
+        "post-update health is visible"
+      ]
+    },
+    {
+      "id": "observability-privacy",
+      "title": "Observability privacy",
+      "steps": [
+        "Enable OTel and Prometheus",
+        "Run representative messages and tool calls"
+      ],
+      "assertions": [
+        "metrics include useful signals",
+        "prompt and response content are not exported",
+        "secrets and private paths are absent"
+      ]
+    }
+  ],
+  "artifacts": [
+    "doctor summary",
+    "update summary",
+    "metric names",
+    "policy denial event",
+    "encrypted-room health"
+  ],
+  "neverCommit": [
+    "recovery keys",
+    "private room ids",
+    "raw logs",
+    "prompt content",
+    "response content",
+    "local endpoint credentials"
+  ]
+}

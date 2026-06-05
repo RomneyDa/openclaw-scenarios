@@ -1,0 +1,258 @@
+{
+  "schemaVersion": 1,
+  "id": "voice-host",
+  "name": "Voice Host",
+  "summary": "A spoken and live communication character for calls, realtime voice, Control UI Talk, meetings, interruption, and cancellation.",
+  "primaryJob": "Expose voice, meeting, STT/TTS, interruption, and transcript persistence issues that text chat does not hit.",
+  "requiredEnv": [
+    "ELEVENLABS_API_KEY",
+    "OPENAI_API_KEY",
+    "OPENCLAW_VOICE_CALL_TEST_NUMBER",
+    "OPENCLAW_VOICE_HOST_STATE_DIR",
+    "OPENCLAW_VOICE_PUBLIC_URL",
+    "TWILIO_ACCOUNT_SID",
+    "TWILIO_AUTH_TOKEN",
+    "TWILIO_FROM_NUMBER"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-call-and-talk-session-state",
+    "stateDirEnv": "OPENCLAW_VOICE_HOST_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "voice-call",
+      "name": "Voice Call",
+      "requiredEnv": [
+        "OPENCLAW_VOICE_CALL_TEST_NUMBER",
+        "TWILIO_ACCOUNT_SID",
+        "TWILIO_AUTH_TOKEN",
+        "TWILIO_FROM_NUMBER"
+      ],
+      "surfaces": [
+        "inbound-call",
+        "outbound-call",
+        "spoken-reply",
+        "post-call-summary"
+      ]
+    },
+    {
+      "id": "control-ui-talk",
+      "name": "Control UI Talk",
+      "requiredEnv": [
+        "OPENCLAW_CONTROL_UI_BASE_URL"
+      ],
+      "surfaces": [
+        "talk-mode",
+        "interrupt",
+        "cancel",
+        "transcript-history"
+      ]
+    },
+    {
+      "id": "google-meet",
+      "name": "Google Meet",
+      "requiredEnv": [
+        "OPENCLAW_GOOGLE_MEET_TEST_ROOM"
+      ],
+      "surfaces": [
+        "meeting-join",
+        "browser-control",
+        "cleanup"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai-realtime",
+      "name": "OpenAI Realtime",
+      "role": "primary-voice-model",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "deepgram",
+      "name": "Deepgram",
+      "role": "stt",
+      "requiredEnv": [
+        "DEEPGRAM_API_KEY"
+      ]
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs or Azure Speech",
+      "role": "tts",
+      "requiredEnv": [
+        "ELEVENLABS_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "voice-call",
+    "talk-voice",
+    "google-meet",
+    "openai",
+    "deepgram",
+    "elevenlabs"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/plugins/voice-call.md",
+      "docs/plugins/google-meet.md",
+      "docs/providers/openai.md",
+      "docs/providers/deepgram.md",
+      "docs/providers/elevenlabs.md",
+      "docs/web/control-ui.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install @openclaw/voice-call",
+      "openclaw plugins install @openclaw/google-meet",
+      "openclaw voicecall setup",
+      "openclaw voicecall smoke"
+    ],
+    "configPatch": {
+      "plugins": {
+        "allow": [
+          "voice-call",
+          "google-meet",
+          "openai",
+          "deepgram",
+          "elevenlabs"
+        ],
+        "entries": {
+          "voice-call": {
+            "enabled": true,
+            "config": {
+              "provider": "twilio",
+              "fromNumber": "${TWILIO_FROM_NUMBER}",
+              "toNumber": "${OPENCLAW_VOICE_CALL_TEST_NUMBER}",
+              "sessionScope": "per-phone",
+              "publicUrl": "${OPENCLAW_VOICE_PUBLIC_URL}",
+              "twilio": {
+                "accountSid": "${TWILIO_ACCOUNT_SID}",
+                "authToken": {
+                  "source": "env",
+                  "provider": "default",
+                  "id": "TWILIO_AUTH_TOKEN"
+                }
+              },
+              "realtime": {
+                "enabled": true,
+                "provider": "openai",
+                "toolPolicy": "safe-read-only",
+                "providers": {
+                  "openai": {
+                    "apiKey": "${OPENAI_API_KEY}"
+                  }
+                }
+              },
+              "tts": {
+                "providers": {
+                  "elevenlabs": {
+                    "apiKey": "${ELEVENLABS_API_KEY}"
+                  }
+                }
+              }
+            }
+          },
+          "google-meet": {
+            "enabled": true,
+            "config": {
+              "defaultTransport": "chrome-node"
+            }
+          },
+          "talk-voice": {
+            "enabled": true
+          },
+          "deepgram": {
+            "enabled": true
+          },
+          "elevenlabs": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "inbound-voice-call-summary",
+      "title": "Inbound voice call summary",
+      "steps": [
+        "Place inbound call",
+        "Ask short question",
+        "Request text follow-up"
+      ],
+      "assertions": [
+        "STT captures usable text",
+        "spoken reply is generated",
+        "post-call summary is delivered"
+      ]
+    },
+    {
+      "id": "outbound-reminder-call",
+      "title": "Outbound reminder call",
+      "steps": [
+        "Schedule reminder",
+        "Deliver through voice call"
+      ],
+      "assertions": [
+        "cron state is visible",
+        "call attempt status is recorded",
+        "fallback notification is explicit"
+      ]
+    },
+    {
+      "id": "control-ui-talk-session",
+      "title": "Control UI Talk session",
+      "steps": [
+        "Start Talk mode",
+        "Ask by voice",
+        "Interrupt or steer midway"
+      ],
+      "assertions": [
+        "turn responds to steer or cancel",
+        "history is usable afterward"
+      ]
+    },
+    {
+      "id": "meeting-join-smoke",
+      "title": "Meeting join smoke",
+      "steps": [
+        "Ask host to join configured Meet room",
+        "Report connection result"
+      ],
+      "assertions": [
+        "connected state is accurate",
+        "credential blocker is explicit",
+        "browser state is cleaned up"
+      ]
+    },
+    {
+      "id": "audio-privacy-check",
+      "title": "Audio privacy check",
+      "steps": [
+        "Include a sensitive phrase in a test call"
+      ],
+      "assertions": [
+        "committed artifacts contain no raw audio",
+        "full transcript is not committed",
+        "summary is redacted"
+      ]
+    }
+  ],
+  "artifacts": [
+    "call attempt id",
+    "talk session screenshot",
+    "meeting connection status",
+    "redacted audio summary"
+  ],
+  "neverCommit": [
+    "raw audio",
+    "call recordings",
+    "full transcripts",
+    "phone numbers",
+    "meeting links"
+  ]
+}

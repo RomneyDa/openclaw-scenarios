@@ -11,10 +11,10 @@ tied to one machine. If a channel, provider, or device is unavailable on a host,
 the scenario runner should mark that surface blocked or skipped rather than
 resetting the character.
 
-Committed reporting must stay redacted. Character status can include coverage,
-health, counters, incident summaries, and short sanitized excerpts. It must not
-include secrets, phone numbers, raw channel IDs, private hostnames, full logs, or
-full transcripts.
+Committed scenario configs must stay redacted. Local run artifacts can include
+coverage, health, counters, incident summaries, screenshots, and short sanitized
+notes. They must not include secrets, phone numbers, raw channel IDs, private
+hostnames, full logs, or transcripts.
 
 ## Shared Expectations
 
@@ -25,7 +25,7 @@ Every character should accumulate real state over time:
 - at least one restart or update across the character lifetime;
 - occasional model switch or fallback path;
 - realistic attachments or tool output where the character's job calls for it;
-- operator status with current health, recent activity, coverage, and
+- local run summary with current health, recent activity, coverage, and
   known blockers.
 
 The flows below are intentionally practical. They are meant to exercise product
@@ -110,7 +110,7 @@ check-ins.
    - Send an inbound voice note describing a small task.
    - Require STT, task extraction, confirmation, and a short TTS or text reply.
    - Later ask, "What did I ask you to handle earlier?" and verify recall without
-     leaking raw transcript details into committed status.
+     leaking raw transcript details into committed files.
 
 3. **Group mention gating**
    - In a small group chat, send unrelated chatter with no mention.
@@ -122,7 +122,7 @@ check-ins.
    - Ask for a short status update over SMS after a reminder or failed channel
      delivery.
    - Verify explicit SMS delivery, allowlist enforcement, and redacted phone
-     identifiers in the status artifact.
+     identifiers in committed artifacts.
 
 5. **Device permission boundary**
    - Ask for a paired-node action such as a screen snapshot or file transfer.
@@ -370,7 +370,7 @@ coverage point for supported coding harnesses.
 6. **Long command output**
    - Run a verbose build/test command.
    - Verify output compaction/truncation preserves actionable errors, does not
-     overflow the transcript, and status reports only sanitized summaries.
+     overflow the context, and local reports only sanitized summaries.
 
 7. **Restart during active work**
    - Start a long repo task, restart/update the gateway, and resume.
@@ -557,7 +557,7 @@ do not hit.
 - STT transcript quality and model handoff.
 - TTS/realtime provider fallback.
 - Abort, steer, and cancellation during live audio.
-- Redacted audio/transcript summaries in operator status.
+- Redacted audio summaries in local run evidence.
 
 ### Plugins And Providers
 

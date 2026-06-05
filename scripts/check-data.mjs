@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const root = new URL("..", import.meta.url);
+const scenariosDir = new URL("scenarios/", root);
 
 const forbiddenPatterns = [
   /\b\d{3}[- .]?\d{3}[- .]?\d{4}\b/u,
@@ -10,99 +11,135 @@ const forbiddenPatterns = [
   /(?:token|secret|password|api[-_]?key)\s*[:=]\s*["']?[A-Za-z0-9._-]{8,}/iu
 ];
 
-async function readJson(relativePath) {
-  const file = new URL(relativePath, root);
-  return JSON.parse(await fs.readFile(file, "utf8"));
-}
-
 function fail(message) {
   throw new Error(message);
 }
 
-function assertSafeCommittedString(value, context) {
+async function readJson(fileUrl) {
+  return JSON.parse(await fs.readFile(fileUrl, "utf8"));
+}
+
+function assertSafeString(value, context) {
   if (typeof value !== "string") {
     return;
   }
   for (const pattern of forbiddenPatterns) {
     if (pattern.test(value)) {
-      fail(`privacy check failed for ${context}`);
+      fail(`possible private value in ${context}`);
     }
   }
 }
 
-function walkSafeCommittedStrings(value, context) {
+function walkStrings(value, context) {
   if (typeof value === "string") {
-    assertSafeCommittedString(value, context);
+    assertSafeString(value, context);
     return;
   }
   if (Array.isArray(value)) {
-    value.forEach((entry, index) => walkSafeCommittedStrings(entry, `${context}[${index}]`));
+    value.forEach((entry, index) => walkStrings(entry, `${context}[${index}]`));
     return;
   }
   if (value && typeof value === "object") {
     for (const [key, entry] of Object.entries(value)) {
-      walkSafeCommittedStrings(entry, `${context}.${key}`);
+      walkStrings(entry, `${context}.${key}`);
     }
   }
 }
 
-const fleet = await readJson("data/fleet.json");
-if (fleet.schemaVersion !== 1 || !Array.isArray(fleet.instances)) {
-  fail("data/fleet.json must contain schemaVersion=1 and instances[]");
+function assertEnvNames(names, context) {
+  if (!Array.isArray(names)) {
+    fail(`${context} must be an array`);
+  }
+  for (const name of names) {
+    if (!/^[A-Z][A-Z0-9_]*$/u.test(name)) {
+      fail(`${context} contains invalid env name: ${name}`);
+    }
+  }
+}
+
+function collectEnvPlaceholders(value, envNames = new Set()) {
+  if (typeof value === "string") {
+    for (const match of value.matchAll(/\$\{([A-Z][A-Z0-9_]*)\}/gu)) {
+      envNames.add(match[1]);
+    }
+    return envNames;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectEnvPlaceholders(entry, envNames));
+    return envNames;
+  }
+  if (value && typeof value === "object") {
+    if (value.source === "env" && typeof value.id === "string") {
+      envNames.add(value.id);
+    }
+    for (const entry of Object.values(value)) {
+      collectEnvPlaceholders(entry, envNames);
+    }
+  }
+  return envNames;
+}
+
+function declaredEnv(config) {
+  return new Set([
+    ...(config.requiredEnv ?? []),
+    ...config.channels.flatMap((channel) => channel.requiredEnv ?? []),
+    ...(config.providers ?? []).flatMap((provider) => provider.requiredEnv ?? [])
+  ]);
+}
+
+const scenarioNames = (await fs.readdir(scenariosDir, { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+
+if (scenarioNames.length !== 8) {
+  fail(`expected 8 character configs, found ${scenarioNames.length}`);
 }
 
 const ids = new Set();
-for (const instance of fleet.instances) {
-  if (!/^[a-z0-9-]+$/u.test(instance.id ?? "")) {
-    fail(`invalid instance id: ${instance.id}`);
+for (const scenarioName of scenarioNames) {
+  const configUrl = new URL(`${scenarioName}/config.json`, scenariosDir);
+  const config = await readJson(configUrl);
+  const context = path.posix.join("scenarios", scenarioName, "config.json");
+
+  if (config.schemaVersion !== 1) {
+    fail(`${context} must use schemaVersion=1`);
   }
-  if (ids.has(instance.id)) {
-    fail(`duplicate instance id: ${instance.id}`);
+  if (!/^[a-z0-9-]+$/u.test(config.id ?? "")) {
+    fail(`${context} has invalid id`);
   }
-  ids.add(instance.id);
-  if (!["linux", "macos", "windows"].includes(instance.os?.family)) {
-    fail(`invalid os.family for ${instance.id}`);
+  if (ids.has(config.id)) {
+    fail(`duplicate character id: ${config.id}`);
   }
-  if (!Array.isArray(instance.channels) || instance.channels.length === 0) {
-    fail(`missing channels for ${instance.id}`);
+  ids.add(config.id);
+  if (!config.name || !config.summary || !config.primaryJob) {
+    fail(`${context} must include name, summary, and primaryJob`);
   }
-  if (!instance.statusPath?.startsWith("data/status/")) {
-    fail(`invalid statusPath for ${instance.id}`);
+  if (!Array.isArray(config.channels) || config.channels.length === 0) {
+    fail(`${context} must include channels`);
   }
-  const status = await readJson(instance.statusPath);
-  if (status.instanceId !== instance.id) {
-    fail(`status instance mismatch for ${instance.id}`);
+  if (!Array.isArray(config.flows) || config.flows.length === 0) {
+    fail(`${context} must include flows`);
   }
-  if (!["pass", "watch", "fail", "unknown"].includes(status.state)) {
-    fail(`invalid state for ${instance.id}`);
+  assertEnvNames(config.requiredEnv ?? [], `${context}.requiredEnv`);
+  for (const channel of config.channels) {
+    assertEnvNames(channel.requiredEnv ?? [], `${context}.channels.${channel.id}.requiredEnv`);
   }
-  if (instance.transcriptPath) {
-    const transcript = await readJson(instance.transcriptPath);
-    if (transcript.instanceId !== instance.id || transcript.redacted !== true) {
-      fail(`transcript for ${instance.id} must be redacted and match instanceId`);
+  for (const provider of config.providers ?? []) {
+    assertEnvNames(provider.requiredEnv ?? [], `${context}.providers.${provider.id}.requiredEnv`);
+  }
+  for (const flow of config.flows) {
+    if (!flow.id || !flow.title || !Array.isArray(flow.steps) || !Array.isArray(flow.assertions)) {
+      fail(`${context} has invalid flow: ${flow.id ?? "<missing>"}`);
     }
   }
-}
-
-walkSafeCommittedStrings(fleet, "fleet");
-walkSafeCommittedStrings(await readJson("data/incidents.json"), "incidents");
-
-const statusDir = new URL("data/status", root);
-for (const name of await fs.readdir(statusDir)) {
-  if (!name.endsWith(".json")) {
-    continue;
+  const missingDeclaredEnv = [...collectEnvPlaceholders(config.openclaw?.configPatch ?? {})].filter(
+    (name) => !declaredEnv(config).has(name)
+  );
+  if (missingDeclaredEnv.length > 0) {
+    fail(`${context} uses undeclared env placeholders: ${missingDeclaredEnv.sort().join(", ")}`);
   }
-  const status = await readJson(path.posix.join("data/status", name));
-  walkSafeCommittedStrings(status, `status.${name}`);
+  walkStrings(config, context);
 }
 
-const transcriptDir = new URL("data/transcripts", root);
-for (const name of await fs.readdir(transcriptDir)) {
-  if (!name.endsWith(".json")) {
-    continue;
-  }
-  const transcript = await readJson(path.posix.join("data/transcripts", name));
-  walkSafeCommittedStrings(transcript, `transcripts.${name}`);
-}
-
-console.log(`validated ${fleet.instances.length} scenario instances`);
+console.log(`validated ${scenarioNames.length} character configs`);

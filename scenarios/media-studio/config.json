@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "id": "media-studio",
+  "name": "Media Studio",
+  "summary": "A multimodal creative and operational media character for image understanding, generation, editing, async video/music, TTS, and attachment delivery.",
+  "primaryJob": "Prove media-heavy OpenClaw flows across real channels with async task ledgers and exactly-once delivery.",
+  "requiredEnv": [
+    "DISCORD_APPLICATION_ID",
+    "DISCORD_BOT_TOKEN",
+    "ELEVENLABS_API_KEY",
+    "LINE_CHANNEL_ACCESS_TOKEN",
+    "LINE_CHANNEL_SECRET",
+    "MINIMAX_API_KEY",
+    "OPENAI_API_KEY",
+    "OPENCLAW_LINE_MEDIA_USER_ID",
+    "OPENCLAW_MEDIA_STUDIO_STATE_DIR",
+    "OPENCLAW_TELEGRAM_MEDIA_USER_ID",
+    "TELEGRAM_BOT_TOKEN",
+    "ZALO_ACCESS_TOKEN",
+    "ZALO_OA_ID"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-media-task-ledger",
+    "stateDirEnv": "OPENCLAW_MEDIA_STUDIO_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "telegram",
+      "name": "Telegram",
+      "requiredEnv": [
+        "OPENCLAW_TELEGRAM_MEDIA_CHAT_ID",
+        "TELEGRAM_BOT_TOKEN"
+      ],
+      "surfaces": [
+        "image-inbound",
+        "generated-media-delivery",
+        "audio-file-delivery"
+      ]
+    },
+    {
+      "id": "discord",
+      "name": "Discord",
+      "requiredEnv": [
+        "DISCORD_APPLICATION_ID",
+        "DISCORD_BOT_TOKEN",
+        "OPENCLAW_DISCORD_MEDIA_GUILD_ID"
+      ],
+      "surfaces": [
+        "image-inbound",
+        "thread",
+        "attachment-upload",
+        "media-reply"
+      ]
+    },
+    {
+      "id": "line-zalo",
+      "name": "LINE or Zalo",
+      "requiredEnv": [
+        "LINE_CHANNEL_ACCESS_TOKEN",
+        "LINE_CHANNEL_SECRET",
+        "OPENCLAW_LINE_MEDIA_USER_ID",
+        "ZALO_ACCESS_TOKEN",
+        "ZALO_OA_ID"
+      ],
+      "surfaces": [
+        "fallback-media-channel",
+        "formatting-check"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "primary-model-and-vision",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "fal",
+      "name": "fal or ComfyUI",
+      "role": "image-provider",
+      "requiredEnv": [
+        "FAL_API_KEY"
+      ]
+    },
+    {
+      "id": "runway",
+      "name": "Runway or video provider",
+      "role": "video-provider",
+      "requiredEnv": [
+        "RUNWAY_API_KEY"
+      ]
+    },
+    {
+      "id": "minimax",
+      "name": "MiniMax or music provider",
+      "role": "music-provider",
+      "requiredEnv": [
+        "MINIMAX_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "openai",
+    "fal",
+    "minimax",
+    "runway",
+    "elevenlabs",
+    "telegram",
+    "discord",
+    "line",
+    "zalo"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/tools/media-overview.md",
+      "docs/tools/image-generation.md",
+      "docs/tools/video-generation.md",
+      "docs/tools/music-generation.md",
+      "docs/tools/tts.md",
+      "docs/channels/telegram.md",
+      "docs/channels/discord.md",
+      "docs/channels/line.md",
+      "docs/channels/zalo.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install @openclaw/line",
+      "openclaw plugins install @openclaw/zalo"
+    ],
+    "configPatch": {
+      "agents": {
+        "defaults": {
+          "imageGenerationModel": {
+            "primary": "openai/gpt-image-2",
+            "timeoutMs": 180000
+          }
+        }
+      },
+      "channels": {
+        "telegram": {
+          "enabled": true,
+          "botToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "TELEGRAM_BOT_TOKEN"
+          },
+          "dmPolicy": "allowlist",
+          "allowFrom": [
+            "${OPENCLAW_TELEGRAM_MEDIA_USER_ID}"
+          ],
+          "groups": {
+            "${OPENCLAW_TELEGRAM_MEDIA_CHAT_ID}": {
+              "requireMention": true
+            }
+          }
+        },
+        "discord": {
+          "enabled": true,
+          "token": {
+            "source": "env",
+            "provider": "default",
+            "id": "DISCORD_BOT_TOKEN"
+          },
+          "applicationId": "${DISCORD_APPLICATION_ID}",
+          "guilds": {
+            "${OPENCLAW_DISCORD_MEDIA_GUILD_ID}": {
+              "requireMention": true
+            }
+          }
+        },
+        "line": {
+          "enabled": true,
+          "channelAccessToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "LINE_CHANNEL_ACCESS_TOKEN"
+          },
+          "channelSecret": {
+            "source": "env",
+            "provider": "default",
+            "id": "LINE_CHANNEL_SECRET"
+          },
+          "dmPolicy": "allowlist",
+          "allowFrom": [
+            "${OPENCLAW_LINE_MEDIA_USER_ID}"
+          ]
+        },
+        "zalo": {
+          "enabled": true,
+          "oaId": "${ZALO_OA_ID}",
+          "accessToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "ZALO_ACCESS_TOKEN"
+          }
+        }
+      },
+      "messages": {
+        "tts": {
+          "providers": {
+            "openai": {
+              "apiKey": "${OPENAI_API_KEY}"
+            },
+            "elevenlabs": {
+              "apiKey": "${ELEVENLABS_API_KEY}"
+            },
+            "minimax": {
+              "apiKey": "${MINIMAX_API_KEY}"
+            }
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "openai": {
+            "enabled": true
+          },
+          "fal": {
+            "enabled": true
+          },
+          "minimax": {
+            "enabled": true
+          },
+          "runway": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "inbound-image-critique",
+      "title": "Inbound image critique",
+      "steps": [
+        "Send image over Telegram or Discord",
+        "Ask for practical critique"
+      ],
+      "assertions": [
+        "image is understood",
+        "reply is visible in channel",
+        "attachment metadata is retained"
+      ]
+    },
+    {
+      "id": "image-generation-roundtrip",
+      "title": "Image generation roundtrip",
+      "steps": [
+        "Ask for an image based on critique",
+        "Wait for completion",
+        "Deliver result"
+      ],
+      "assertions": [
+        "generation submits",
+        "media reference is stored",
+        "image posts back to channel"
+      ]
+    },
+    {
+      "id": "video-async-job",
+      "title": "Video async job",
+      "steps": [
+        "Ask for short video",
+        "Receive acknowledgement",
+        "Wake on completion"
+      ],
+      "assertions": [
+        "task ledger tracks state",
+        "completion delivery happens exactly once",
+        "timeout is explicit"
+      ]
+    },
+    {
+      "id": "music-async-job",
+      "title": "Music async job",
+      "steps": [
+        "Ask for short intro sting",
+        "Wait for provider completion"
+      ],
+      "assertions": [
+        "long-running task is tracked",
+        "final audio attachment is delivered or blocked clearly"
+      ]
+    },
+    {
+      "id": "cross-channel-media-formatting",
+      "title": "Cross-channel media formatting",
+      "steps": [
+        "Receive or generate media in one channel",
+        "Ask for summary in another channel"
+      ],
+      "assertions": [
+        "target syntax is correct",
+        "upload formatting works",
+        "raw local media paths are not exposed"
+      ]
+    }
+  ],
+  "artifacts": [
+    "generated media ids",
+    "task ledger summary",
+    "channel delivery links",
+    "thumbnail screenshots"
+  ],
+  "neverCommit": [
+    "raw generated media unless intentionally exported",
+    "provider job secrets",
+    "local media paths",
+    "full prompts"
+  ]
+}

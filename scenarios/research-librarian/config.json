@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "id": "research-librarian",
+  "name": "Research Librarian",
+  "summary": "A long-horizon research and knowledge-management character for search, browser, documents, citations, and Memory Wiki.",
+  "primaryJob": "Exercise research flows that require source comparison, browser automation, document extraction, citation preservation, and memory freshness checks.",
+  "requiredEnv": [
+    "BRAVE_API_KEY",
+    "MATRIX_ACCESS_TOKEN",
+    "MATRIX_HOMESERVER",
+    "OPENCLAW_RESEARCH_LIBRARIAN_STATE_DIR",
+    "OPENCLAW_TELEGRAM_RESEARCH_USER_ID",
+    "TAVILY_API_KEY",
+    "TELEGRAM_BOT_TOKEN"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-memory-and-research-notes",
+    "stateDirEnv": "OPENCLAW_RESEARCH_LIBRARIAN_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "webchat",
+      "name": "WebChat",
+      "requiredEnv": [
+        "OPENCLAW_WEBCHAT_BASE_URL"
+      ],
+      "surfaces": [
+        "research-chat",
+        "uploads",
+        "browser-results"
+      ]
+    },
+    {
+      "id": "telegram",
+      "name": "Telegram",
+      "requiredEnv": [
+        "OPENCLAW_TELEGRAM_RESEARCH_CHAT_ID",
+        "TELEGRAM_BOT_TOKEN"
+      ],
+      "surfaces": [
+        "dm",
+        "room-delivery",
+        "document-attachments"
+      ]
+    },
+    {
+      "id": "matrix",
+      "name": "Matrix",
+      "requiredEnv": [
+        "MATRIX_ACCESS_TOKEN",
+        "MATRIX_HOMESERVER",
+        "OPENCLAW_MATRIX_RESEARCH_ROOM"
+      ],
+      "surfaces": [
+        "dm-or-room",
+        "thread-isolation",
+        "e2ee-when-configured"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "primary-model",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "brave",
+      "name": "Brave Search",
+      "role": "search-provider",
+      "requiredEnv": [
+        "BRAVE_API_KEY"
+      ]
+    },
+    {
+      "id": "tavily",
+      "name": "Tavily",
+      "role": "search-provider",
+      "requiredEnv": [
+        "TAVILY_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "memory-core",
+    "memory-wiki",
+    "document-extract",
+    "web-readability",
+    "browser",
+    "tavily"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/tools/web.md",
+      "docs/tools/brave-search.md",
+      "docs/tools/tavily.md",
+      "docs/tools/pdf.md",
+      "docs/tools/browser-control.md",
+      "docs/channels/telegram.md",
+      "docs/channels/matrix.md"
+    ],
+    "setupCommands": [
+      "openclaw configure --section web",
+      "openclaw plugins install @openclaw/matrix"
+    ],
+    "configPatch": {
+      "channels": {
+        "telegram": {
+          "enabled": true,
+          "botToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "TELEGRAM_BOT_TOKEN"
+          },
+          "dmPolicy": "allowlist",
+          "allowFrom": [
+            "${OPENCLAW_TELEGRAM_RESEARCH_USER_ID}"
+          ],
+          "groupPolicy": "allowlist",
+          "groups": {
+            "${OPENCLAW_TELEGRAM_RESEARCH_CHAT_ID}": {
+              "requireMention": true
+            }
+          }
+        },
+        "matrix": {
+          "enabled": true,
+          "homeserver": "${MATRIX_HOMESERVER}",
+          "accessToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "MATRIX_ACCESS_TOKEN"
+          },
+          "dm": {
+            "policy": "pairing",
+            "sessionScope": "per-room",
+            "threadReplies": "off"
+          },
+          "groupPolicy": "allowlist",
+          "groups": {
+            "${OPENCLAW_MATRIX_RESEARCH_ROOM}": {
+              "requireMention": true
+            }
+          }
+        }
+      },
+      "tools": {
+        "web": {
+          "search": {
+            "enabled": true,
+            "provider": "brave"
+          }
+        }
+      },
+      "plugins": {
+        "entries": {
+          "brave": {
+            "enabled": true,
+            "config": {
+              "webSearch": {
+                "apiKey": "${BRAVE_API_KEY}"
+              }
+            }
+          },
+          "tavily": {
+            "enabled": true,
+            "config": {
+              "apiKey": "${TAVILY_API_KEY}"
+            }
+          },
+          "memory-core": {
+            "enabled": true
+          },
+          "memory-wiki": {
+            "enabled": true
+          },
+          "document-extract": {
+            "enabled": true
+          },
+          "web-readability": {
+            "enabled": true
+          },
+          "browser": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "source-backed-brief",
+      "title": "Source-backed brief",
+      "steps": [
+        "Ask for a current research brief",
+        "Require web search",
+        "Fetch and compare sources"
+      ],
+      "assertions": [
+        "answer includes citations",
+        "sources are compared",
+        "citations remain available after memory or compaction"
+      ]
+    },
+    {
+      "id": "pdf-ingestion",
+      "title": "PDF ingestion",
+      "steps": [
+        "Provide a document attachment",
+        "Ask for key points and open questions",
+        "Create a memory note"
+      ],
+      "assertions": [
+        "document extraction succeeds or reports fallback",
+        "later memory recall works"
+      ]
+    },
+    {
+      "id": "browser-only-site",
+      "title": "Browser-only site",
+      "steps": [
+        "Ask for information from a JS-heavy or login-required page"
+      ],
+      "assertions": [
+        "browser path is used when needed",
+        "missing login is reported clearly",
+        "profile details are not committed"
+      ]
+    },
+    {
+      "id": "memory-wiki-update",
+      "title": "Memory Wiki update",
+      "steps": [
+        "Promote research result to a wiki page",
+        "Ask later for contradictions or freshness"
+      ],
+      "assertions": [
+        "wiki and memory agree usefully",
+        "freshness status is explicit"
+      ]
+    }
+  ],
+  "artifacts": [
+    "citation list",
+    "document extraction summary",
+    "browser screenshot",
+    "memory wiki change summary"
+  ],
+  "neverCommit": [
+    "logged-in browser profile details",
+    "private documents",
+    "full excerpts",
+    "raw transcripts"
+  ]
+}

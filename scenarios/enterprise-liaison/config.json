@@ -1,0 +1,304 @@
+{
+  "schemaVersion": 1,
+  "id": "enterprise-liaison",
+  "name": "Enterprise Liaison",
+  "summary": "A corporate chat and workflow user that handles webhooks, structured tasks, enterprise rooms, and config churn.",
+  "primaryJob": "Prove enterprise channel setup, authenticated inbound work, structured outputs, and config changes without faking unavailable credentials.",
+  "requiredEnv": [
+    "FEISHU_APP_ID",
+    "FEISHU_APP_SECRET",
+    "FEISHU_ENCRYPT_KEY",
+    "FEISHU_VERIFICATION_TOKEN",
+    "GOOGLECHAT_SERVICE_ACCOUNT_JSON",
+    "MATTERMOST_BOT_TOKEN",
+    "MATTERMOST_SERVER_URL",
+    "MATTERMOST_TEAM",
+    "NEXTCLOUD_TALK_APP_PASSWORD",
+    "NEXTCLOUD_TALK_ROOM_TOKEN",
+    "NEXTCLOUD_TALK_SERVER_URL",
+    "NEXTCLOUD_TALK_USERNAME",
+    "OPENCLAW_ENTERPRISE_LIAISON_STATE_DIR",
+    "OPENCLAW_GOOGLECHAT_AUDIENCE",
+    "OPENCLAW_GOOGLECHAT_BOT_USER",
+    "OPENCLAW_GOOGLECHAT_OPERATOR_USER"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-workflow-ledger",
+    "stateDirEnv": "OPENCLAW_ENTERPRISE_LIAISON_STATE_DIR"
+  },
+  "channels": [
+    {
+      "id": "google-chat",
+      "name": "Google Chat",
+      "requiredEnv": [
+        "GOOGLECHAT_SERVICE_ACCOUNT_JSON",
+        "OPENCLAW_GOOGLECHAT_AUDIENCE",
+        "OPENCLAW_GOOGLECHAT_SPACE"
+      ],
+      "surfaces": [
+        "space",
+        "room",
+        "service-account-identity",
+        "status-probe"
+      ]
+    },
+    {
+      "id": "feishu-lark",
+      "name": "Feishu/Lark",
+      "requiredEnv": [
+        "FEISHU_APP_ID",
+        "FEISHU_APP_SECRET",
+        "FEISHU_ENCRYPT_KEY",
+        "FEISHU_VERIFICATION_TOKEN"
+      ],
+      "surfaces": [
+        "chat",
+        "document-helper",
+        "permission-aware-actions"
+      ]
+    },
+    {
+      "id": "mattermost-nextcloud",
+      "name": "Mattermost or Nextcloud Talk",
+      "requiredEnv": [
+        "MATTERMOST_BOT_TOKEN",
+        "MATTERMOST_SERVER_URL",
+        "MATTERMOST_TEAM",
+        "NEXTCLOUD_TALK_APP_PASSWORD",
+        "NEXTCLOUD_TALK_ROOM_TOKEN",
+        "NEXTCLOUD_TALK_SERVER_URL",
+        "NEXTCLOUD_TALK_USERNAME"
+      ],
+      "surfaces": [
+        "room-routing",
+        "session-isolation"
+      ]
+    },
+    {
+      "id": "webhook",
+      "name": "Authenticated Webhook",
+      "requiredEnv": [
+        "OPENCLAW_WEBHOOK_SHARED_SECRET"
+      ],
+      "surfaces": [
+        "inbound-event",
+        "task-flow",
+        "redacted-payload"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "primary-model",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    },
+    {
+      "id": "google",
+      "name": "Google/Gemini",
+      "role": "grounded-or-enterprise-adjacent-model",
+      "requiredEnv": [
+        "GOOGLE_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "googlechat",
+    "feishu",
+    "mattermost",
+    "nextcloud-talk",
+    "webhooks",
+    "llm-task",
+    "lobster"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/channels/googlechat.md",
+      "docs/channels/feishu.md",
+      "docs/channels/mattermost.md",
+      "docs/channels/nextcloud-talk.md",
+      "docs/plugins/webhooks.md",
+      "docs/tools/llm-task.md",
+      "docs/tools/lobster.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins install @openclaw/googlechat",
+      "openclaw plugins install @openclaw/mattermost",
+      "openclaw plugins install @openclaw/nextcloud-talk"
+    ],
+    "configPatch": {
+      "channels": {
+        "googlechat": {
+          "enabled": true,
+          "serviceAccountRef": {
+            "source": "env",
+            "provider": "default",
+            "id": "GOOGLECHAT_SERVICE_ACCOUNT_JSON"
+          },
+          "audienceType": "app-url",
+          "audience": "${OPENCLAW_GOOGLECHAT_AUDIENCE}",
+          "webhookPath": "/googlechat",
+          "botUser": "${OPENCLAW_GOOGLECHAT_BOT_USER}",
+          "dm": {
+            "policy": "pairing",
+            "allowFrom": [
+              "${OPENCLAW_GOOGLECHAT_OPERATOR_USER}"
+            ]
+          },
+          "groupPolicy": "allowlist",
+          "groups": {
+            "${OPENCLAW_GOOGLECHAT_SPACE}": {
+              "enabled": true,
+              "requireMention": true,
+              "users": [
+                "${OPENCLAW_GOOGLECHAT_OPERATOR_USER}"
+              ]
+            }
+          }
+        },
+        "feishu": {
+          "enabled": true,
+          "appId": "${FEISHU_APP_ID}",
+          "appSecret": {
+            "source": "env",
+            "provider": "default",
+            "id": "FEISHU_APP_SECRET"
+          },
+          "encryptKey": {
+            "source": "env",
+            "provider": "default",
+            "id": "FEISHU_ENCRYPT_KEY"
+          },
+          "verificationToken": {
+            "source": "env",
+            "provider": "default",
+            "id": "FEISHU_VERIFICATION_TOKEN"
+          },
+          "groupPolicy": "allowlist"
+        },
+        "mattermost": {
+          "enabled": true,
+          "serverUrl": "${MATTERMOST_SERVER_URL}",
+          "token": {
+            "source": "env",
+            "provider": "default",
+            "id": "MATTERMOST_BOT_TOKEN"
+          },
+          "team": "${MATTERMOST_TEAM}",
+          "groupPolicy": "allowlist"
+        },
+        "nextcloud-talk": {
+          "enabled": true,
+          "serverUrl": "${NEXTCLOUD_TALK_SERVER_URL}",
+          "username": "${NEXTCLOUD_TALK_USERNAME}",
+          "appPassword": {
+            "source": "env",
+            "provider": "default",
+            "id": "NEXTCLOUD_TALK_APP_PASSWORD"
+          },
+          "room": "${NEXTCLOUD_TALK_ROOM_TOKEN}"
+        }
+      },
+      "plugins": {
+        "entries": {
+          "webhooks": {
+            "enabled": true
+          },
+          "llm-task": {
+            "enabled": true
+          },
+          "lobster": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "webhook-channel-report",
+      "title": "Webhook to channel report",
+      "steps": [
+        "Send authenticated business alert webhook",
+        "Create task or Task Flow",
+        "Deliver summary to enterprise channel"
+      ],
+      "assertions": [
+        "webhook auth is enforced",
+        "task state is recorded",
+        "payload is redacted",
+        "delivery reaches configured channel"
+      ]
+    },
+    {
+      "id": "config-hot-apply",
+      "title": "Config hot-apply channel change",
+      "steps": [
+        "Change channel allowlist or plugin flag",
+        "Apply without manual reset when supported",
+        "Continue existing session"
+      ],
+      "assertions": [
+        "channel status updates",
+        "session can continue",
+        "unsupported hot apply is marked blocked"
+      ]
+    },
+    {
+      "id": "structured-workflow-step",
+      "title": "Structured workflow step",
+      "steps": [
+        "Classify incoming requests into a JSON schema",
+        "Send malformed input",
+        "Summarize results to channel"
+      ],
+      "assertions": [
+        "valid inputs match schema",
+        "malformed inputs refuse clearly",
+        "summary is concise"
+      ]
+    },
+    {
+      "id": "document-helper",
+      "title": "Feishu/Lark document helper",
+      "steps": [
+        "Ask for document or wiki summary",
+        "Run with and without credentials"
+      ],
+      "assertions": [
+        "permission-aware action succeeds when configured",
+        "missing credentials are blocked, not faked"
+      ]
+    },
+    {
+      "id": "restart-pending-workflow",
+      "title": "Restart with pending workflow",
+      "steps": [
+        "Start multi-step workflow",
+        "Restart OpenClaw",
+        "Continue to final delivery"
+      ],
+      "assertions": [
+        "task ledger survives",
+        "final delivery happens once",
+        "no duplicate channel post"
+      ]
+    }
+  ],
+  "artifacts": [
+    "webhook request id",
+    "task ledger summary",
+    "channel delivery link",
+    "schema validation report"
+  ],
+  "neverCommit": [
+    "webhook secrets",
+    "document ids",
+    "room ids",
+    "raw enterprise payloads"
+  ]
+}
