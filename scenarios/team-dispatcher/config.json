@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "team-dispatcher",
   "name": "Team Dispatcher",
-  "summary": "A shared-room operator that watches team channels, handles threads, approvals, reactions, edits, deletes, and live steering.",
-  "primaryJob": "Exercise team-room routing and visible collaboration behavior without creating bot loops or duplicate replies.",
+  "summary": "A shared-room operator that watches mature team channels, handles threads, approvals, reactions, edits, deletes, and live steering.",
+  "primaryJob": "Exercise Discord and Slack as reliable team-room proof lanes, with Teams as an alpha escalation lane, without creating bot loops or duplicate replies.",
   "requiredEnv": [
     "DISCORD_APPLICATION_ID",
     "DISCORD_BOT_TOKEN",
@@ -12,14 +12,13 @@
     "MSTEAMS_TENANT_ID",
     "OPENCLAW_DISCORD_OPERATOR_USER_ID",
     "OPENCLAW_MSTEAMS_OPERATOR_ID",
-    "OPENCLAW_TEAM_DISPATCHER_STATE_DIR",
     "SLACK_APP_TOKEN",
     "SLACK_BOT_TOKEN"
   ],
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-thread-history",
-    "stateDirEnv": "OPENCLAW_TEAM_DISPATCHER_STATE_DIR"
+    "defaultStateDir": ".state/team-dispatcher"
   },
   "channels": [
     {
@@ -269,5 +268,19 @@
     "raw channel ids",
     "bot tokens",
     "full thread transcripts"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "discord",
+      "slack",
+      "channel-framework",
+      "security-auth-pairing-and-secrets"
+    ],
+    "secondary": [
+      "microsoft-teams",
+      "agent-runtime-and-provider-execution",
+      "telemetry-diagnostics-and-observability"
+    ],
+    "expectation": "Discord and Slack are the reliable shared-room proof lanes; Teams is an alpha escalation lane with explicit blocked or partial evidence when setup is unavailable."
+  }
 }

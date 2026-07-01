@@ -6,7 +6,6 @@
   "primaryJob": "Prove real coding-agent flows through the surfaces users actually touch: TUI, WebChat, Control UI, Slack thread binding, and local workspaces.",
   "requiredEnv": [
     "OPENCLAW_CODING_FOREMAN_REPO_DIR",
-    "OPENCLAW_CODING_FOREMAN_STATE_DIR",
     "OPENCLAW_SLACK_CODING_CHANNEL_ID",
     "SLACK_APP_TOKEN",
     "SLACK_BOT_TOKEN"
@@ -14,7 +13,7 @@
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-workspace-and-agent-state",
-    "stateDirEnv": "OPENCLAW_CODING_FOREMAN_STATE_DIR"
+    "defaultStateDir": ".state/coding-foreman"
   },
   "channels": [
     {
@@ -33,9 +32,7 @@
     {
       "id": "webchat-control-ui",
       "name": "WebChat / Control UI",
-      "requiredEnv": [
-        "OPENCLAW_CONTROL_UI_BASE_URL"
-      ],
+      "defaultBaseUrl": "http://localhost:18789/",
       "surfaces": [
         "chat",
         "approval-ui",
@@ -252,5 +249,19 @@
     "full command logs",
     "raw transcripts",
     "credential files"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "agent-runtime-and-provider-execution",
+      "openai-codex-provider-path",
+      "browser-automation-and-exec-sandbox-tools",
+      "tui-and-terminal-ux"
+    ],
+    "secondary": [
+      "browser-control-ui-and-webchat",
+      "plugin-sdk-and-bundled-plugin-architecture",
+      "security-auth-pairing-and-secrets"
+    ],
+    "expectation": "This is the main coding-agent proof character; keep plugin marketplace and install lifecycle checks in ClawHub Curator unless a repo task directly needs them."
+  }
 }

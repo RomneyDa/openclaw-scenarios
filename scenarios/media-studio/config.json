@@ -3,7 +3,7 @@
   "id": "media-studio",
   "name": "Media Studio",
   "summary": "A multimodal creative and operational media character for image understanding, generation, editing, async video/music, TTS, and attachment delivery.",
-  "primaryJob": "Prove media-heavy OpenClaw flows across real channels with async task ledgers and exactly-once delivery.",
+  "primaryJob": "Prove alpha-heavy media flows across real channels with provider-attempt evidence, async task ledgers, fallback handling, and exactly-once delivery.",
   "requiredEnv": [
     "DISCORD_APPLICATION_ID",
     "DISCORD_BOT_TOKEN",
@@ -13,7 +13,6 @@
     "MINIMAX_API_KEY",
     "OPENAI_API_KEY",
     "OPENCLAW_LINE_MEDIA_USER_ID",
-    "OPENCLAW_MEDIA_STUDIO_STATE_DIR",
     "OPENCLAW_TELEGRAM_MEDIA_USER_ID",
     "TELEGRAM_BOT_TOKEN",
     "ZALO_ACCESS_TOKEN",
@@ -22,7 +21,7 @@
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-media-task-ledger",
-    "stateDirEnv": "OPENCLAW_MEDIA_STUDIO_STATE_DIR"
+    "defaultStateDir": ".state/media-studio"
   },
   "channels": [
     {
@@ -310,5 +309,18 @@
     "provider job secrets",
     "local media paths",
     "full prompts"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "media-understanding-and-media-generation",
+      "image-video-music-generation-tools",
+      "telegram",
+      "discord"
+    ],
+    "secondary": [
+      "mattermost-line-irc-nextcloud-talk-nostr-twitch-tlon-synology-chat",
+      "feishu-qq-bot-wechat-yuanbao-zalo-zalo-personal-regional-channels"
+    ],
+    "expectation": "Media generation is alpha-heavy, so successful evidence should include provider attempts, task state, fallbacks, and blocked reasons rather than only final assets."
+  }
 }

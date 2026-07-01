@@ -8,7 +8,6 @@
     "BRAVE_API_KEY",
     "MATRIX_ACCESS_TOKEN",
     "MATRIX_HOMESERVER",
-    "OPENCLAW_RESEARCH_LIBRARIAN_STATE_DIR",
     "OPENCLAW_TELEGRAM_RESEARCH_USER_ID",
     "TAVILY_API_KEY",
     "TELEGRAM_BOT_TOKEN"
@@ -16,15 +15,13 @@
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-memory-and-research-notes",
-    "stateDirEnv": "OPENCLAW_RESEARCH_LIBRARIAN_STATE_DIR"
+    "defaultStateDir": ".state/research-librarian"
   },
   "channels": [
     {
       "id": "webchat",
       "name": "WebChat",
-      "requiredEnv": [
-        "OPENCLAW_WEBCHAT_BASE_URL"
-      ],
+      "defaultBaseUrl": "http://localhost:18789/",
       "surfaces": [
         "research-chat",
         "uploads",
@@ -255,5 +252,19 @@
     "private documents",
     "full excerpts",
     "raw transcripts"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "web-search-tools",
+      "browser-automation-and-exec-sandbox-tools",
+      "session-memory-and-context-engine",
+      "browser-control-ui-and-webchat"
+    ],
+    "secondary": [
+      "telegram",
+      "matrix",
+      "openai-codex-provider-path"
+    ],
+    "expectation": "Optimize for analyst and knowledge-worker flows: cited answers, document ingestion, browser-only pages, and memory freshness."
+  }
 }

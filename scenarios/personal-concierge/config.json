@@ -7,9 +7,6 @@
   "requiredEnv": [
     "ELEVENLABS_API_KEY",
     "OPENAI_API_KEY",
-    "OPENCLAW_IMESSAGE_DB_PATH",
-    "OPENCLAW_IMSG_CLI_PATH",
-    "OPENCLAW_PERSONAL_CONCIERGE_STATE_DIR",
     "OPENCLAW_PERSONAL_WHATSAPP_ALLOWED_FROM",
     "OPENCLAW_PERSONAL_WHATSAPP_GROUP_ID",
     "SMS_PUBLIC_WEBHOOK_URL",
@@ -20,7 +17,7 @@
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-state-across-runs",
-    "stateDirEnv": "OPENCLAW_PERSONAL_CONCIERGE_STATE_DIR"
+    "defaultStateDir": ".state/personal-concierge"
   },
   "channels": [
     {
@@ -42,10 +39,6 @@
     {
       "id": "imessage",
       "name": "iMessage",
-      "requiredEnv": [
-        "OPENCLAW_IMESSAGE_DB_PATH",
-        "OPENCLAW_IMSG_CLI_PATH"
-      ],
       "surfaces": [
         "dm",
         "attachments",
@@ -136,8 +129,6 @@
         },
         "imessage": {
           "enabled": true,
-          "cliPath": "${OPENCLAW_IMSG_CLI_PATH}",
-          "dbPath": "${OPENCLAW_IMESSAGE_DB_PATH}",
           "dmPolicy": "pairing",
           "includeAttachments": true
         },
@@ -262,5 +253,21 @@
     "raw channel ids",
     "voice note audio",
     "device identifiers"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "whatsapp",
+      "imessage-bluebubbles",
+      "channel-framework",
+      "automation-cron-hooks-tasks-polling",
+      "session-memory-and-context-engine",
+      "media-understanding-and-media-generation"
+    ],
+    "secondary": [
+      "android-app",
+      "ios-app",
+      "security-auth-pairing-and-secrets"
+    ],
+    "expectation": "Use WhatsApp and iMessage as the mature phone-style proof lanes; mobile app and device work can be blocked or partial when the host lacks that surface."
+  }
 }

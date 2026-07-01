@@ -106,8 +106,8 @@ const scenarioNames = (await fs.readdir(scenariosDir, { withFileTypes: true }))
   .map((entry) => entry.name)
   .sort();
 
-if (scenarioNames.length !== 8) {
-  fail(`expected 8 character configs, found ${scenarioNames.length}`);
+if (scenarioNames.length !== 10) {
+  fail(`expected 10 character configs, found ${scenarioNames.length}`);
 }
 
 const ids = new Set();
@@ -129,6 +129,16 @@ for (const scenarioName of scenarioNames) {
   ids.add(config.id);
   if (!config.name || !config.summary || !config.primaryJob) {
     fail(`${context} must include name, summary, and primaryJob`);
+  }
+  if (
+    !config.taxonomy ||
+    !Array.isArray(config.taxonomy.primary) ||
+    config.taxonomy.primary.length === 0 ||
+    !Array.isArray(config.taxonomy.secondary) ||
+    typeof config.taxonomy.expectation !== "string" ||
+    config.taxonomy.expectation.trim() === ""
+  ) {
+    fail(`${context} must include taxonomy.primary, taxonomy.secondary, and taxonomy.expectation`);
   }
   if (!Array.isArray(config.channels) || config.channels.length === 0) {
     fail(`${context} must include channels`);

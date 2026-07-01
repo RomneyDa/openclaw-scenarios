@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "id": "enterprise-liaison",
   "name": "Enterprise Liaison",
-  "summary": "A corporate chat and workflow user that handles webhooks, structured tasks, enterprise rooms, and config churn.",
-  "primaryJob": "Prove enterprise channel setup, authenticated inbound work, structured outputs, and config changes without faking unavailable credentials.",
+  "summary": "A corporate workflow user that handles enterprise service identities, webhooks, structured tasks, long-tail workplace channels, and config churn.",
+  "primaryJob": "Prove enterprise setup, authenticated inbound work, structured outputs, and config changes while making long-tail channel maturity explicit.",
   "requiredEnv": [
     "FEISHU_APP_ID",
     "FEISHU_APP_SECRET",
@@ -17,7 +17,6 @@
     "NEXTCLOUD_TALK_ROOM_TOKEN",
     "NEXTCLOUD_TALK_SERVER_URL",
     "NEXTCLOUD_TALK_USERNAME",
-    "OPENCLAW_ENTERPRISE_LIAISON_STATE_DIR",
     "OPENCLAW_GOOGLECHAT_AUDIENCE",
     "OPENCLAW_GOOGLECHAT_BOT_USER",
     "OPENCLAW_GOOGLECHAT_OPERATOR_USER"
@@ -25,7 +24,7 @@
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-workflow-ledger",
-    "stateDirEnv": "OPENCLAW_ENTERPRISE_LIAISON_STATE_DIR"
+    "defaultStateDir": ".state/enterprise-liaison"
   },
   "channels": [
     {
@@ -300,5 +299,19 @@
     "document ids",
     "room ids",
     "raw enterprise payloads"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "google-chat",
+      "feishu-qq-bot-wechat-yuanbao-zalo-zalo-personal-regional-channels",
+      "mattermost-line-irc-nextcloud-talk-nostr-twitch-tlon-synology-chat",
+      "automation-cron-hooks-tasks-polling"
+    ],
+    "secondary": [
+      "plugin-sdk-and-bundled-plugin-architecture",
+      "google-provider-path",
+      "security-auth-pairing-and-secrets"
+    ],
+    "expectation": "Treat this as enterprise workflow and service-identity coverage, not a claim that every long-tail corporate channel has the same maturity."
+  }
 }

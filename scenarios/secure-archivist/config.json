@@ -2,29 +2,28 @@
   "schemaVersion": 1,
   "id": "secure-archivist",
   "name": "Secure Archivist",
-  "summary": "A privacy and resilience character for encrypted rooms, policy, pairing, doctor/update behavior, observability, and local fallback.",
-  "primaryJob": "Expose bad upgrade behavior, config drift, redaction misses, encrypted-state problems, and tool-policy regressions.",
+  "summary": "A privacy character for encrypted rooms, private channels, pairing, policy, redaction, observability, and local fallback.",
+  "primaryJob": "Expose encrypted-state problems, redaction misses, pairing mistakes, private-channel drift, observability leaks, and tool-policy regressions.",
   "requiredEnv": [
     "MATRIX_ACCESS_TOKEN",
     "MATRIX_HOMESERVER",
     "NOSTR_PRIVATE_KEY",
-    "NOSTR_RELAY_URLS",
+    "NOSTR_RELAY_PRIMARY",
+    "NOSTR_RELAY_SECONDARY",
+    "OLLAMA_BASE_URL",
     "OPENCLAW_IRC_CHANNEL",
     "OPENCLAW_IRC_HOST",
     "OPENCLAW_IRC_NICK",
     "OPENCLAW_MATRIX_OPERATOR_USER",
     "OPENCLAW_MATRIX_SECURE_ROOM",
-    "OPENCLAW_SECURE_ARCHIVIST_STATE_DIR",
     "OPENCLAW_SIGNAL_ALLOWED_FROM",
     "SEARXNG_BASE_URL",
-    "SIGNAL_ACCOUNT",
-    "SIGNAL_CLI_CONFIG_PATH",
-    "SIGNAL_CLI_PATH"
+    "SIGNAL_ACCOUNT"
   ],
   "state": {
     "mode": "persistent",
     "resetPolicy": "keep-encrypted-and-admin-state",
-    "stateDirEnv": "OPENCLAW_SECURE_ARCHIVIST_STATE_DIR"
+    "defaultStateDir": ".state/secure-archivist"
   },
   "channels": [
     {
@@ -49,9 +48,7 @@
       "name": "Signal",
       "requiredEnv": [
         "OPENCLAW_SIGNAL_ALLOWED_FROM",
-        "SIGNAL_ACCOUNT",
-        "SIGNAL_CLI_CONFIG_PATH",
-        "SIGNAL_CLI_PATH"
+        "SIGNAL_ACCOUNT"
       ],
       "surfaces": [
         "private-channel-state",
@@ -64,7 +61,8 @@
       "name": "Nostr or IRC",
       "requiredEnv": [
         "NOSTR_PRIVATE_KEY",
-        "NOSTR_RELAY_URLS",
+        "NOSTR_RELAY_PRIMARY",
+        "NOSTR_RELAY_SECONDARY",
         "OPENCLAW_IRC_CHANNEL",
         "OPENCLAW_IRC_HOST",
         "OPENCLAW_IRC_NICK"
@@ -76,16 +74,13 @@
     },
     {
       "id": "control-ui-cli",
-      "name": "Control UI and CLI",
-      "requiredEnv": [
-        "OPENCLAW_CONTROL_UI_BASE_URL"
-      ],
+      "name": "Control UI and CLI status",
+      "defaultBaseUrl": "http://localhost:18789/",
       "surfaces": [
-        "admin-config",
-        "doctor",
-        "update",
+        "pairing-admin",
+        "policy-status",
         "logs",
-        "status"
+        "redacted-observability"
       ]
     }
   ],
@@ -103,7 +98,7 @@
       "name": "Ollama, LM Studio, vLLM, or SGLang",
       "role": "local-fallback",
       "requiredEnv": [
-        "OPENCLAW_LOCAL_MODEL_ENDPOINT"
+        "OLLAMA_BASE_URL"
       ]
     },
     {
@@ -135,7 +130,6 @@
       "docs/channels/signal.md",
       "docs/channels/nostr.md",
       "docs/channels/irc.md",
-      "docs/cli/doctor.md",
       "docs/providers/ollama.md",
       "docs/providers/lmstudio.md",
       "docs/providers/vllm.md",
@@ -145,10 +139,17 @@
       "openclaw plugins install @openclaw/matrix",
       "openclaw plugins install @openclaw/nostr",
       "openclaw matrix encryption setup",
-      "openclaw matrix verify status",
-      "openclaw doctor"
+      "openclaw matrix verify status"
     ],
     "configPatch": {
+      "models": {
+        "providers": {
+          "ollama": {
+            "baseUrl": "${OLLAMA_BASE_URL}",
+            "apiKey": "ollama-local"
+          }
+        }
+      },
       "channels": {
         "matrix": {
           "enabled": true,
@@ -184,8 +185,6 @@
         "signal": {
           "enabled": true,
           "account": "${SIGNAL_ACCOUNT}",
-          "cliPath": "${SIGNAL_CLI_PATH}",
-          "configPath": "${SIGNAL_CLI_CONFIG_PATH}",
           "dmPolicy": "pairing",
           "allowFrom": [
             "${OPENCLAW_SIGNAL_ALLOWED_FROM}"
@@ -194,8 +193,9 @@
         "nostr": {
           "enabled": true,
           "privateKey": "${NOSTR_PRIVATE_KEY}",
-          "relayUrls": [
-            "${NOSTR_RELAY_URLS}"
+          "relays": [
+            "${NOSTR_RELAY_PRIMARY}",
+            "${NOSTR_RELAY_SECONDARY}"
           ]
         },
         "irc": {
@@ -294,17 +294,17 @@
       ]
     },
     {
-      "id": "doctor-update-health",
-      "title": "Doctor, update, and restart health",
+      "id": "tool-denial-policy-check",
+      "title": "Tool denial and policy check",
       "steps": [
-        "Run doctor",
-        "Run doctor fix where appropriate",
-        "Run update/restart"
+        "Ask for a high-risk command or private-channel action",
+        "Deny or block the action through policy",
+        "Inspect status and logs"
       ],
       "assertions": [
-        "migrations preserve user state",
-        "runtime reads canonical state",
-        "post-update health is visible"
+        "denial is explicit",
+        "blocked action does not continue",
+        "logs and status redact private context"
       ]
     },
     {
@@ -322,11 +322,10 @@
     }
   ],
   "artifacts": [
-    "doctor summary",
-    "update summary",
     "metric names",
     "policy denial event",
-    "encrypted-room health"
+    "encrypted-room health",
+    "redacted pairing summary"
   ],
   "neverCommit": [
     "recovery keys",
@@ -335,5 +334,19 @@
     "prompt content",
     "response content",
     "local endpoint credentials"
-  ]
+  ],
+  "taxonomy": {
+    "primary": [
+      "matrix",
+      "signal",
+      "security-auth-pairing-and-secrets",
+      "telemetry-diagnostics-and-observability"
+    ],
+    "secondary": [
+      "mattermost-line-irc-nextcloud-talk-nostr-twitch-tlon-synology-chat",
+      "local-model-providers-ollama-vllm-sglang-lm-studio",
+      "channel-framework"
+    ],
+    "expectation": "Keep this character focused on private channels, pairing, policy, redaction, and observability; platform update and doctor survival belongs to Platform Custodian."
+  }
 }

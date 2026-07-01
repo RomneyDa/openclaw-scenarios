@@ -73,6 +73,7 @@ const cards = configs
         <div><dt>Providers</dt><dd>${escapeHtml((config.providers ?? []).map((provider) => provider.name ?? provider.id).join(", "))}</dd></div>
         <div><dt>Plugins</dt><dd>${escapeHtml((config.plugins ?? []).join(", "))}</dd></div>
         <div><dt>Env</dt><dd>${uniqueEnv.length}</dd></div>
+        <div><dt>Taxonomy</dt><dd>${escapeHtml((config.taxonomy?.primary ?? []).join(", "))}</dd></div>
       </dl>
       <h3>Flows</h3>
       <ul>${flows}</ul>

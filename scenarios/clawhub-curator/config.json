@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "id": "clawhub-curator",
+  "name": "ClawHub Curator",
+  "summary": "A plugin and marketplace operator for ClawHub browsing, plugin install/uninstall, SDK smoke checks, packaged plugins, approvals, and plugin lifecycle evidence.",
+  "primaryJob": "Prove that OpenClaw plugin discovery, installation, approval, runtime loading, tool/channel/provider registration, and packaged plugin workflows behave like a real extension ecosystem.",
+  "taxonomy": {
+    "primary": [
+      "plugin-sdk-and-bundled-plugin-architecture",
+      "clawhub-and-external-plugin-distribution",
+      "openclaw-app-sdk"
+    ],
+    "secondary": [
+      "security-auth-pairing-and-secrets",
+      "agent-runtime-and-provider-execution",
+      "browser-control-ui-and-webchat"
+    ],
+    "expectation": "Keep marketplace, SDK, plugin lifecycle, and packaged plugin proof here so Coding Foreman can stay focused on repository work and coding-agent behavior."
+  },
+  "requiredEnv": [
+    "OPENAI_API_KEY"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-plugin-install-history",
+    "defaultStateDir": ".state/clawhub-curator"
+  },
+  "channels": [
+    {
+      "id": "cli-plugin-workflow",
+      "name": "CLI plugin workflow",
+      "surfaces": [
+        "plugin-list",
+        "plugin-install",
+        "plugin-uninstall",
+        "doctor",
+        "approval"
+      ]
+    },
+    {
+      "id": "control-ui-plugin-console",
+      "name": "Control UI plugin console",
+      "defaultBaseUrl": "http://localhost:18789/",
+      "surfaces": [
+        "plugin-status",
+        "approval-ui",
+        "tool-visibility",
+        "channel-provider-status"
+      ]
+    },
+    {
+      "id": "clawhub-catalog",
+      "name": "ClawHub catalog",
+      "surfaces": [
+        "marketplace-list",
+        "manifest-contract",
+        "packaged-plugin",
+        "release-candidate-check"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "baseline-model-for-plugin-smoke",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "clawhub",
+    "plugin-inspector",
+    "policy",
+    "diagnostics-otel"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/plugins/index.md",
+      "docs/plugins/manifest.md",
+      "docs/plugins/clawhub.md",
+      "docs/plugin-sdk/index.md",
+      "docs/tools/mcp.md",
+      "docs/gateway/security/index.md"
+    ],
+    "setupCommands": [
+      "openclaw plugins list",
+      "openclaw plugins install <PLUGIN>",
+      "openclaw plugins uninstall <PLUGIN>",
+      "openclaw doctor"
+    ],
+    "configPatch": {
+      "plugins": {
+        "entries": {
+          "clawhub": {
+            "enabled": true
+          },
+          "plugin-inspector": {
+            "enabled": true
+          },
+          "policy": {
+            "enabled": true
+          },
+          "diagnostics-otel": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "catalog-browse-install",
+      "title": "Catalog browse and install",
+      "steps": [
+        "List available ClawHub entries",
+        "Install one safe test plugin",
+        "Restart or hot-load when required",
+        "Inspect status"
+      ],
+      "assertions": [
+        "catalog metadata is readable",
+        "install result is deterministic",
+        "plugin status is visible",
+        "missing network or auth is reported as blocked"
+      ]
+    },
+    {
+      "id": "plugin-approval-boundary",
+      "title": "Plugin approval boundary",
+      "steps": [
+        "Install or enable a plugin that requests a privileged capability",
+        "Approve once",
+        "Deny once"
+      ],
+      "assertions": [
+        "approval request names the capability",
+        "approved path continues",
+        "denied path leaves no enabled privileged behavior"
+      ]
+    },
+    {
+      "id": "sdk-smoke",
+      "title": "SDK smoke",
+      "steps": [
+        "Run a minimal SDK or packaged plugin fixture",
+        "Expose one tool or channel surface",
+        "Invoke it through OpenClaw"
+      ],
+      "assertions": [
+        "manifest contract validates",
+        "runtime registration succeeds",
+        "tool or channel invocation is observable"
+      ]
+    },
+    {
+      "id": "install-uninstall-restart",
+      "title": "Install/uninstall/restart lifecycle",
+      "steps": [
+        "Install a plugin",
+        "Use one exposed feature",
+        "Uninstall it",
+        "Restart the gateway"
+      ],
+      "assertions": [
+        "feature appears only while installed",
+        "uninstall removes runtime availability",
+        "restart does not resurrect stale plugin state"
+      ]
+    },
+    {
+      "id": "packaged-release-candidate-check",
+      "title": "Packaged plugin release-candidate check",
+      "steps": [
+        "Install a packaged candidate or local fixture",
+        "Run its health probe",
+        "Capture a concise report"
+      ],
+      "assertions": [
+        "package metadata matches manifest",
+        "health failures are actionable",
+        "report contains no secrets or private paths"
+      ]
+    }
+  ],
+  "artifacts": [
+    "plugin inventory",
+    "approval decision summary",
+    "manifest validation report",
+    "redacted plugin health report"
+  ]
+}

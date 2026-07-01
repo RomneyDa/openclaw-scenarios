@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "id": "platform-custodian",
+  "name": "Platform Custodian",
+  "summary": "A host and lifecycle operator for install, onboard, update, doctor, gateway services, Docker, WSL2, small Linux devices, and companion app checks.",
+  "primaryJob": "Prove that OpenClaw survives real setup, service management, updates, doctor repair, and platform differences without hiding blocked host capabilities.",
+  "taxonomy": {
+    "primary": [
+      "cli-install-update-onboard-doctor",
+      "gateway-runtime",
+      "macos-gateway-host",
+      "linux-gateway-host",
+      "docker-podman-hosting"
+    ],
+    "secondary": [
+      "windows-via-wsl2",
+      "raspberry-pi-small-linux-devices",
+      "android-app",
+      "ios-app",
+      "telemetry-diagnostics-and-observability"
+    ],
+    "expectation": "Use the local host and Docker as the default repeatable proof paths; WSL2, Pi, Android, and iOS are optional platform lanes that should report skipped or blocked honestly."
+  },
+  "requiredEnv": [
+    "OPENAI_API_KEY"
+  ],
+  "state": {
+    "mode": "persistent",
+    "resetPolicy": "keep-host-and-upgrade-state",
+    "defaultStateDir": ".state/platform-custodian"
+  },
+  "channels": [
+    {
+      "id": "cli",
+      "name": "CLI",
+      "surfaces": [
+        "onboard",
+        "doctor",
+        "doctor-fix",
+        "update",
+        "status",
+        "logs"
+      ]
+    },
+    {
+      "id": "gateway-service",
+      "name": "Gateway service",
+      "defaultBaseUrl": "http://localhost:18789/",
+      "surfaces": [
+        "start-stop-restart",
+        "health",
+        "websocket",
+        "control-ui",
+        "webchat"
+      ]
+    },
+    {
+      "id": "docker-host",
+      "name": "Docker or Podman host",
+      "surfaces": [
+        "container-setup",
+        "image-update",
+        "gateway-network",
+        "volume-state"
+      ]
+    },
+    {
+      "id": "platform-companions",
+      "name": "Platform companion checks",
+      "surfaces": [
+        "macos-companion",
+        "android-app",
+        "ios-app",
+        "wsl2",
+        "raspberry-pi"
+      ]
+    }
+  ],
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "role": "baseline-model-for-smoke-turns",
+      "requiredEnv": [
+        "OPENAI_API_KEY"
+      ]
+    }
+  ],
+  "plugins": [
+    "diagnostics-otel",
+    "diagnostics-prometheus",
+    "policy"
+  ],
+  "openclaw": {
+    "sourceDocs": [
+      "docs/cli/onboard.md",
+      "docs/cli/doctor.md",
+      "docs/install/updating.md",
+      "docs/install/docker.md",
+      "docs/gateway/index.md",
+      "docs/gateway/troubleshooting.md",
+      "docs/web/control-ui.md",
+      "docs/web/webchat.md"
+    ],
+    "setupCommands": [
+      "openclaw status",
+      "openclaw doctor",
+      "openclaw doctor --fix",
+      "openclaw update --check"
+    ],
+    "configPatch": {
+      "plugins": {
+        "entries": {
+          "diagnostics-otel": {
+            "enabled": true
+          },
+          "diagnostics-prometheus": {
+            "enabled": true
+          },
+          "policy": {
+            "enabled": true
+          }
+        }
+      }
+    }
+  },
+  "flows": [
+    {
+      "id": "first-run-onboard-smoke",
+      "title": "First-run onboard smoke",
+      "steps": [
+        "Start from a clean or new state directory",
+        "Run setup or onboard path",
+        "Start the gateway",
+        "Send one baseline turn"
+      ],
+      "assertions": [
+        "setup state is created",
+        "gateway becomes healthy",
+        "model status is visible",
+        "blocked credentials are reported honestly"
+      ]
+    },
+    {
+      "id": "doctor-fix-migration",
+      "title": "Doctor fix migration",
+      "steps": [
+        "Seed an old or drifted config shape where available",
+        "Run doctor",
+        "Run doctor --fix when safe",
+        "Restart the gateway"
+      ],
+      "assertions": [
+        "doctor names actionable issues",
+        "fix preserves user state",
+        "runtime reads canonical state after restart"
+      ]
+    },
+    {
+      "id": "update-restart-health",
+      "title": "Update and restart health",
+      "steps": [
+        "Run an update check or package self-upgrade lane",
+        "Restart the gateway",
+        "Open Control UI/WebChat",
+        "Send a smoke message"
+      ],
+      "assertions": [
+        "version and health are visible",
+        "channels reconnect or report blocked",
+        "session state survives the restart"
+      ]
+    },
+    {
+      "id": "docker-host-survival",
+      "title": "Docker host survival",
+      "steps": [
+        "Start the Docker or Podman lane",
+        "Exercise gateway networking",
+        "Restart the container",
+        "Inspect persisted state"
+      ],
+      "assertions": [
+        "container starts without host-specific secrets",
+        "network URL is usable",
+        "volume-backed state survives restart"
+      ]
+    },
+    {
+      "id": "platform-capability-report",
+      "title": "Platform capability report",
+      "steps": [
+        "Probe local host, WSL2, small Linux, and companion app surfaces where available",
+        "Record unavailable capabilities as skipped or blocked"
+      ],
+      "assertions": [
+        "missing platforms are not treated as failures",
+        "available platforms include real health evidence",
+        "private hostnames and paths are redacted"
+      ]
+    }
+  ],
+  "artifacts": [
+    "doctor summary",
+    "version/status report",
+    "gateway health snapshot",
+    "redacted platform capability matrix"
+  ]
+}
